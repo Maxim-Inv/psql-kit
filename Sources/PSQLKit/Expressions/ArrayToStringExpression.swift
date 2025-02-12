@@ -1,12 +1,11 @@
 // ArrayToStringExpression.swift
 // Copyright (c) 2024 hiimtmac inc.
 
-import struct PostgresNIO.PostgresDataType
-import protocol SQLKit.SQLExpression
-import struct SQLKit.SQLSerializer
+import PostgresNIO
+import SQLKit
 
-public struct ArrayToStringExpression<Content>: AggregateExpression where
-    Content: PSQLArrayRepresentable
+public struct ArrayToStringExpression<Content>: AggregateExpression, Sendable where
+    Content: PSQLArrayRepresentable & Sendable
 {
     let content: Content
     let delimiter: String
@@ -26,7 +25,7 @@ extension ArrayToStringExpression: SelectSQLExpression where
         _Select(content: self.content, delimiter: self.delimiter, ifNull: self.ifNull)
     }
 
-    private struct _Select: SQLExpression {
+    struct _Select: SQLExpression {
         let content: Content
         let delimiter: String
         let ifNull: String?
@@ -44,7 +43,7 @@ extension ArrayToStringExpression: SelectSQLExpression where
                 ifNull.serialize(to: &serializer)
             }
             serializer.write(")")
-            PostgresDataType.text.serialize(to: &serializer)
+            serializer.writeCast(.text)
         }
     }
 }
@@ -56,7 +55,7 @@ extension ArrayToStringExpression: CompareSQLExpression where
         _Compare(content: self.content, delimiter: self.delimiter, ifNull: self.ifNull)
     }
 
-    private struct _Compare: SQLExpression {
+    struct _Compare: SQLExpression {
         let content: Content
         let delimiter: String
         let ifNull: String?

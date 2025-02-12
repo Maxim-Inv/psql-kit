@@ -1,74 +1,65 @@
 // FromTests.swift
 // Copyright (c) 2024 hiimtmac inc.
 
-import XCTest
-@testable import PSQLKit
+import Foundation
+import SQLKit
+import Testing
+import PSQLKit
 
-final class FromTests: PSQLTestCase {
-    let f = FluentModel.as("x")
+@Suite
+struct FromTests {
     let p = PSQLModel.as("x")
 
+    @Test
     func testFromModel() {
-        FROM {
-            FluentModel.table
-        }
-        .serialize(to: &fluentSerializer)
+        var serializer = SQLSerializer.test
 
         FROM {
             PSQLModel.table
         }
-        .serialize(to: &psqlkitSerializer)
-        XCTAssertEqual(fluentSerializer.sql, #"FROM "my_model""#)
-        XCTAssertEqual(psqlkitSerializer.sql, #"FROM "my_model""#)
+        .serialize(to: &serializer)
+        #expect(serializer.sql == #"FROM "my_model""#)
     }
 
+    @Test
     func testFromModelAlias() {
-        FROM {
-            f.table
-        }
-        .serialize(to: &fluentSerializer)
+        var serializer = SQLSerializer.test
 
         FROM {
             p.table
         }
-        .serialize(to: &psqlkitSerializer)
-        XCTAssertEqual(fluentSerializer.sql, #"FROM "my_model" AS "x""#)
-        XCTAssertEqual(psqlkitSerializer.sql, #"FROM "my_model" AS "x""#)
+        .serialize(to: &serializer)
+        #expect(serializer.sql == #"FROM "my_model" AS "x""#)
     }
 
+    @Test
     func testFromBoth() {
-        FROM {
-            f.table
-            FluentModel.table
-            FluentModel.table.as("cool")
-        }
-        .serialize(to: &fluentSerializer)
+        var serializer = SQLSerializer.test
 
         FROM {
             p.table
             PSQLModel.table
             PSQLModel.table.as("cool")
         }
-        .serialize(to: &psqlkitSerializer)
-        XCTAssertEqual(fluentSerializer.sql, #"FROM "my_model" AS "x", "my_model", "my_model" AS "cool""#)
-        XCTAssertEqual(psqlkitSerializer.sql, #"FROM "my_model" AS "x", "my_model", "my_model" AS "cool""#)
+        .serialize(to: &serializer)
+        #expect(serializer.sql == #"FROM "my_model" AS "x", "my_model", "my_model" AS "cool""#)
     }
 
+    @Test
     func testFromRaw() {
-        FROM {
-            RawTable("tableName")
-        }
-        .serialize(to: &fluentSerializer)
+        var serializer = SQLSerializer.test
 
         FROM {
             RawTable("tableName")
         }
-        .serialize(to: &psqlkitSerializer)
-        XCTAssertEqual(fluentSerializer.sql, #"FROM "tableName""#)
-        XCTAssertEqual(psqlkitSerializer.sql, #"FROM "tableName""#)
+        .serialize(to: &serializer)
+        #expect(serializer.sql == #"FROM "tableName""#)
     }
 
+    @Test
     func testFromGenerateSeries() {
+        var serializer = SQLSerializer.test
+
         let date1 = DateComponents(calendar: .current, year: 2020, month: 01, day: 01).date!.psqlDate
         let date2 = DateComponents(calendar: .current, year: 2020, month: 01, day: 30).date!.psqlDate
 
@@ -76,28 +67,15 @@ final class FromTests: PSQLTestCase {
             GENERATE_SERIES(from: date1, to: date2, interval: "1 day").as("dates")
             GENERATE_SERIES(from: date1, to: date2, interval: "1 day")
         }
-        .serialize(to: &fluentSerializer)
-
-        FROM {
-            GENERATE_SERIES(from: date1, to: date2, interval: "1 day").as("dates")
-            GENERATE_SERIES(from: date1, to: date2, interval: "1 day")
-        }
-        .serialize(to: &psqlkitSerializer)
+        .serialize(to: &serializer)
 
         let compare = #"FROM GENERATE_SERIES('2020-01-01'::DATE, '2020-01-30'::DATE, '1 day'::INTERVAL) AS "dates", GENERATE_SERIES('2020-01-01'::DATE, '2020-01-30'::DATE, '1 day'::INTERVAL)"#
-        XCTAssertEqual(fluentSerializer.sql, compare)
-        XCTAssertEqual(psqlkitSerializer.sql, compare)
+        #expect(serializer.sql == compare)
     }
 
+    @Test
     func testSubquery() {
-        FROM {
-            QUERY {
-                SELECT { f.$age }
-                FROM { f.table }
-            }
-            .asSubquery(f.table)
-        }
-        .serialize(to: &fluentSerializer)
+        var serializer = SQLSerializer.test
 
         FROM {
             QUERY {
@@ -106,23 +84,17 @@ final class FromTests: PSQLTestCase {
             }
             .asSubquery(p.table)
         }
-        .serialize(to: &psqlkitSerializer)
+        .serialize(to: &serializer)
 
         let compare = #"FROM (SELECT "x"."age"::INTEGER FROM "my_model" AS "x") AS "x""#
-        XCTAssertEqual(fluentSerializer.sql, compare)
-        XCTAssertEqual(psqlkitSerializer.sql, compare)
+        #expect(serializer.sql == compare)
     }
 
+    @Test
     func testIfElseTrue() {
+        var serializer = SQLSerializer.test
+
         let bool = true
-        FROM {
-            if bool {
-                f.table
-            } else {
-                FluentModel.table
-            }
-        }
-        .serialize(to: &fluentSerializer)
 
         FROM {
             if bool {
@@ -131,23 +103,17 @@ final class FromTests: PSQLTestCase {
                 PSQLModel.table
             }
         }
-        .serialize(to: &psqlkitSerializer)
+        .serialize(to: &serializer)
 
         let compare = #"FROM "my_model" AS "x""#
-        XCTAssertEqual(fluentSerializer.sql, compare)
-        XCTAssertEqual(psqlkitSerializer.sql, compare)
+        #expect(serializer.sql == compare)
     }
 
+    @Test
     func testIfElseFalse() {
+        var serializer = SQLSerializer.test
+
         let bool = false
-        FROM {
-            if bool {
-                f.table
-            } else {
-                FluentModel.table
-            }
-        }
-        .serialize(to: &fluentSerializer)
 
         FROM {
             if bool {
@@ -156,14 +122,16 @@ final class FromTests: PSQLTestCase {
                 PSQLModel.table
             }
         }
-        .serialize(to: &psqlkitSerializer)
+        .serialize(to: &serializer)
 
         let compare = #"FROM "my_model""#
-        XCTAssertEqual(fluentSerializer.sql, compare)
-        XCTAssertEqual(psqlkitSerializer.sql, compare)
+        #expect(serializer.sql == compare)
     }
 
+    @Test
     func testSwitch() {
+        var serializer = SQLSerializer.test
+
         enum Test {
             case one
             case two
@@ -174,17 +142,6 @@ final class FromTests: PSQLTestCase {
 
         FROM {
             switch option {
-            case .one: f.table
-            case .two: FluentModel.table
-            case .three:
-                FluentModel.table
-                f.table
-            }
-        }
-        .serialize(to: &fluentSerializer)
-
-        FROM {
-            switch option {
             case .one: p.table
             case .two: PSQLModel.table
             case .three:
@@ -192,22 +149,17 @@ final class FromTests: PSQLTestCase {
                 p.table
             }
         }
-        .serialize(to: &psqlkitSerializer)
+        .serialize(to: &serializer)
 
         let compare = #"FROM "my_model""#
-        XCTAssertEqual(fluentSerializer.sql, compare)
-        XCTAssertEqual(psqlkitSerializer.sql, compare)
+        #expect(serializer.sql == compare)
     }
 
+    @Test
     func testIfTrue() {
+        var serializer = SQLSerializer.test
+
         let bool = true
-        FROM {
-            FluentModel.table
-            if bool {
-                f.table
-            }
-        }
-        .serialize(to: &fluentSerializer)
 
         FROM {
             PSQLModel.table
@@ -215,22 +167,17 @@ final class FromTests: PSQLTestCase {
                 p.table
             }
         }
-        .serialize(to: &psqlkitSerializer)
+        .serialize(to: &serializer)
 
         let compare = #"FROM "my_model", "my_model" AS "x""#
-        XCTAssertEqual(fluentSerializer.sql, compare)
-        XCTAssertEqual(psqlkitSerializer.sql, compare)
+        #expect(serializer.sql == compare)
     }
 
+    @Test
     func testIfFalse() {
+        var serializer = SQLSerializer.test
+
         let bool = false
-        FROM {
-            FluentModel.table
-            if bool {
-                f.table
-            }
-        }
-        .serialize(to: &fluentSerializer)
 
         FROM {
             PSQLModel.table
@@ -238,22 +185,40 @@ final class FromTests: PSQLTestCase {
                 p.table
             }
         }
-        .serialize(to: &psqlkitSerializer)
+        .serialize(to: &serializer)
 
         let compare = #"FROM "my_model""#
-        XCTAssertEqual(fluentSerializer.sql, compare)
-        XCTAssertEqual(psqlkitSerializer.sql, compare)
+        #expect(serializer.sql == compare)
     }
 
+    @Test
     func testEmpty() {
-        FROM {}
-            .serialize(to: &fluentSerializer)
+        var serializer = SQLSerializer.test
 
         FROM {}
-            .serialize(to: &psqlkitSerializer)
+            .serialize(to: &serializer)
 
         let compare = #""#
-        XCTAssertEqual(fluentSerializer.sql, compare)
-        XCTAssertEqual(psqlkitSerializer.sql, compare)
+        #expect(serializer.sql == compare)
+    }
+    
+    @Test
+    func testSingleAlias() {
+        var serializer = SQLSerializer.test
+        FROM(p.table)
+            .serialize(to: &serializer)
+
+        let compare = #"FROM "my_model" AS "x""#
+        #expect(serializer.sql == compare)
+    }
+    
+    @Test
+    func testSingleFull() {
+        var serializer = SQLSerializer.test
+        FROM(PSQLModel.table)
+            .serialize(to: &serializer)
+
+        let compare = #"FROM "my_model""#
+        #expect(serializer.sql == compare)
     }
 }

@@ -1,15 +1,14 @@
 // Int+PSQL.swift
 // Copyright (c) 2024 hiimtmac inc.
 
-import struct PostgresNIO.PostgresDataType
-import protocol SQLKit.SQLExpression
-import struct SQLKit.SQLSerializer
+import PostgresNIO
+import SQLKit
 
 extension Int: PSQLExpression {
     public static var postgresDataType: PostgresDataType { .int4 }
 }
 
-extension Int: SQLExpression {
+extension Int: @retroactive SQLExpression {
     public func serialize(to serializer: inout SQLSerializer) {
         serializer.write("\(self)")
     }
@@ -38,4 +37,8 @@ extension Int: CompareSQLExpression {
 
 extension Int: MutationSQLExpression {
     public var mutationSqlExpression: some SQLExpression { self }
+}
+
+extension Int: OrderBySQLExpression {
+    public var orderBySqlExpression: some SQLExpression { self }
 }

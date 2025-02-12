@@ -1,46 +1,34 @@
 // WithTests.swift
 // Copyright (c) 2024 hiimtmac inc.
 
-import XCTest
-@testable import PSQLKit
+import SQLKit
+import Testing
+import PSQLKit
 
-final class WithTests: PSQLTestCase {
-    let f = FluentModel.as("x")
+@Suite
+struct WithTests {
     let p = PSQLModel.as("x")
 
+    @Test
     func testWith1() {
-        WITH {
-            QUERY {
-                SELECT { FluentModel.$name }
-                FROM { FluentModel.table }
-            }
-            .asWith(FluentModel.table)
-        }
-        .serialize(to: &fluentSerializer)
+        var serializer = SQLSerializer.test
 
         WITH {
             QUERY {
                 SELECT { PSQLModel.$name }
                 FROM { PSQLModel.table }
             }
-            .asWith(FluentModel.table)
+            .asWith(PSQLModel.table)
         }
-        .serialize(to: &psqlkitSerializer)
+        .serialize(to: &serializer)
 
         let compare = #"WITH "my_model" AS (SELECT "my_model"."name"::TEXT FROM "my_model")"#
-        XCTAssertEqual(fluentSerializer.sql, compare)
-        XCTAssertEqual(psqlkitSerializer.sql, compare)
+        #expect(serializer.sql == compare)
     }
 
+    @Test
     func testWith2() {
-        WITH {
-            QUERY {
-                SELECT { f.$title }
-                FROM { f.table }
-            }
-            .asWith(f.table)
-        }
-        .serialize(to: &fluentSerializer)
+        var serializer = SQLSerializer.test
 
         WITH {
             QUERY {
@@ -49,26 +37,15 @@ final class WithTests: PSQLTestCase {
             }
             .asWith(p.table)
         }
-        .serialize(to: &psqlkitSerializer)
+        .serialize(to: &serializer)
 
         let compare = #"WITH "x" AS (SELECT "x"."title"::TEXT FROM "my_model" AS "x")"#
-        XCTAssertEqual(fluentSerializer.sql, compare)
-        XCTAssertEqual(psqlkitSerializer.sql, compare)
+        #expect(serializer.sql == compare)
     }
 
+    @Test
     func testWithInQuery() {
-        QUERY {
-            WITH {
-                QUERY {
-                    SELECT { FluentModel.$name }
-                    FROM { FluentModel.table }
-                }
-                .asWith(FluentModel.table)
-            }
-            SELECT { FluentModel.$name }
-            FROM { FluentModel.table }
-        }
-        .serialize(to: &fluentSerializer)
+        var serializer = SQLSerializer.test
 
         QUERY {
             WITH {
@@ -81,53 +58,37 @@ final class WithTests: PSQLTestCase {
             SELECT { PSQLModel.$name }
             FROM { PSQLModel.table }
         }
-        .serialize(to: &psqlkitSerializer)
+        .serialize(to: &serializer)
 
         let compare = #"WITH "my_model" AS (SELECT "my_model"."name"::TEXT FROM "my_model") SELECT "my_model"."name"::TEXT FROM "my_model""#
-        XCTAssertEqual(fluentSerializer.sql, compare)
-        XCTAssertEqual(psqlkitSerializer.sql, compare)
+        #expect(serializer.sql == compare)
     }
 
+    @Test
     func testWithErased() {
-        let f = QUERY {
-            SELECT { FluentModel.$name }
-            FROM { FluentModel.table }
-        }
-
-        QUERY {
-            WITH { f.asWith(FluentModel.table) }
-            SELECT { FluentModel.$name }
-            FROM { FluentModel.table }
-        }
-        .serialize(to: &fluentSerializer)
+        var serializer = SQLSerializer.test
 
         let p = QUERY {
-            SELECT { FluentModel.$name }
-            FROM { FluentModel.table }
+            SELECT { PSQLModel.$name }
+            FROM { PSQLModel.table }
         }
 
         QUERY {
-            WITH { p.asWith(FluentModel.table) }
-            SELECT { FluentModel.$name }
-            FROM { FluentModel.table }
+            WITH { p.asWith(PSQLModel.table) }
+            SELECT { PSQLModel.$name }
+            FROM { PSQLModel.table }
         }
-        .serialize(to: &psqlkitSerializer)
+        .serialize(to: &serializer)
 
         let compare = #"WITH "my_model" AS (SELECT "my_model"."name"::TEXT FROM "my_model") SELECT "my_model"."name"::TEXT FROM "my_model""#
-        XCTAssertEqual(fluentSerializer.sql, compare)
-        XCTAssertEqual(psqlkitSerializer.sql, compare)
+        #expect(serializer.sql == compare)
     }
 
+    @Test
     func testIfElseTrue() {
+        var serializer = SQLSerializer.test
+
         let bool = true
-        WITH {
-            if bool {
-                QUERY { SELECT { f.$title } }.asWith(f.table)
-            } else {
-                QUERY { SELECT { f.$age } }.asWith(f.table)
-            }
-        }
-        .serialize(to: &fluentSerializer)
 
         WITH {
             if bool {
@@ -136,23 +97,17 @@ final class WithTests: PSQLTestCase {
                 QUERY { SELECT { p.$age } }.asWith(p.table)
             }
         }
-        .serialize(to: &psqlkitSerializer)
+        .serialize(to: &serializer)
 
         let compare = #"WITH "x" AS (SELECT "x"."title"::TEXT)"#
-        XCTAssertEqual(fluentSerializer.sql, compare)
-        XCTAssertEqual(psqlkitSerializer.sql, compare)
+        #expect(serializer.sql == compare)
     }
 
+    @Test
     func testIfElseFalse() {
+        var serializer = SQLSerializer.test
+
         let bool = false
-        WITH {
-            if bool {
-                QUERY { SELECT { f.$title } }.asWith(f.table)
-            } else {
-                QUERY { SELECT { f.$age } }.asWith(f.table)
-            }
-        }
-        .serialize(to: &fluentSerializer)
 
         WITH {
             if bool {
@@ -161,14 +116,16 @@ final class WithTests: PSQLTestCase {
                 QUERY { SELECT { p.$age } }.asWith(p.table)
             }
         }
-        .serialize(to: &psqlkitSerializer)
+        .serialize(to: &serializer)
 
         let compare = #"WITH "x" AS (SELECT "x"."age"::INTEGER)"#
-        XCTAssertEqual(fluentSerializer.sql, compare)
-        XCTAssertEqual(psqlkitSerializer.sql, compare)
+        #expect(serializer.sql == compare)
     }
 
+    @Test
     func testSwitch() {
+        var serializer = SQLSerializer.test
+
         enum Test {
             case one
             case two
@@ -179,17 +136,6 @@ final class WithTests: PSQLTestCase {
 
         WITH {
             switch option {
-            case .one: QUERY { SELECT { f.$title } }.asWith(f.table)
-            case .two: QUERY { SELECT { f.$age } }.asWith(f.table)
-            case .three:
-                QUERY { SELECT { f.$title } }.asWith(f.table)
-                QUERY { SELECT { f.$age } }.asWith(f.table)
-            }
-        }
-        .serialize(to: &fluentSerializer)
-
-        WITH {
-            switch option {
             case .one: QUERY { SELECT { p.$title } }.asWith(p.table)
             case .two: QUERY { SELECT { p.$age } }.asWith(p.table)
             case .three:
@@ -197,64 +143,54 @@ final class WithTests: PSQLTestCase {
                 QUERY { SELECT { p.$age } }.asWith(p.table)
             }
         }
-        .serialize(to: &psqlkitSerializer)
+        .serialize(to: &serializer)
 
         let compare = #"WITH "x" AS (SELECT "x"."age"::INTEGER)"#
-        XCTAssertEqual(fluentSerializer.sql, compare)
-        XCTAssertEqual(psqlkitSerializer.sql, compare)
+        #expect(serializer.sql == compare)
     }
 
+    @Test
     func testIfTrue() {
+        var serializer = SQLSerializer.test
+
         let bool = true
-        WITH {
-            if bool {
-                QUERY { SELECT { f.$title } }.asWith(f.table)
-            }
-        }
-        .serialize(to: &fluentSerializer)
 
         WITH {
             if bool {
                 QUERY { SELECT { p.$title } }.asWith(p.table)
             }
         }
-        .serialize(to: &psqlkitSerializer)
+        .serialize(to: &serializer)
 
         let compare = #"WITH "x" AS (SELECT "x"."title"::TEXT)"#
-        XCTAssertEqual(fluentSerializer.sql, compare)
-        XCTAssertEqual(psqlkitSerializer.sql, compare)
+        #expect(serializer.sql == compare)
     }
 
+    @Test
     func testIfFalse() {
+        var serializer = SQLSerializer.test
+
         let bool = false
-        WITH {
-            if bool {
-                QUERY { SELECT { f.$title } }.asWith(f.table)
-            }
-        }
-        .serialize(to: &fluentSerializer)
 
         WITH {
             if bool {
                 QUERY { SELECT { p.$title } }.asWith(p.table)
             }
         }
-        .serialize(to: &psqlkitSerializer)
+        .serialize(to: &serializer)
 
         let compare = #""#
-        XCTAssertEqual(fluentSerializer.sql, compare)
-        XCTAssertEqual(psqlkitSerializer.sql, compare)
+        #expect(serializer.sql == compare)
     }
 
+    @Test
     func testEmpty() {
-        WITH {}
-            .serialize(to: &fluentSerializer)
+        var serializer = SQLSerializer.test
 
         WITH {}
-            .serialize(to: &psqlkitSerializer)
+            .serialize(to: &serializer)
 
         let compare = #""#
-        XCTAssertEqual(fluentSerializer.sql, compare)
-        XCTAssertEqual(psqlkitSerializer.sql, compare)
+        #expect(serializer.sql == compare)
     }
 }

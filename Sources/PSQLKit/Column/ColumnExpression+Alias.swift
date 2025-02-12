@@ -1,12 +1,11 @@
 // ColumnExpression+Alias.swift
 // Copyright (c) 2024 hiimtmac inc.
 
-import struct PostgresNIO.PostgresDataType
-import protocol SQLKit.SQLExpression
-import struct SQLKit.SQLSerializer
+import PostgresNIO
+import SQLKit
 
 extension ColumnExpression {
-    public struct Alias {
+    public struct Alias: Sendable {
         let column: ColumnExpression<T>
         let alias: String
     }
@@ -26,53 +25,41 @@ extension ColumnExpression.Alias: BaseSQLExpression {
     public var baseSqlExpression: some SQLExpression {
         _Base(
             aliasName: column.aliasName,
-            spaceName: column.spaceName,
             schemaName: column.schemaName,
+            tableName: column.tableName,
             columnName: column.columnName,
             columnAlias: alias
         )
     }
 
-    private struct _Base: SQLExpression {
+    struct _Base: SQLExpression {
         let aliasName: String?
-        let spaceName: String?
         let schemaName: String?
+        let tableName: String?
         let columnName: String
         let columnAlias: String
 
         func serialize(to serializer: inout SQLSerializer) {
             if let alias = aliasName {
-                serializer.writeQuote()
-                serializer.write(alias)
-                serializer.writeQuote()
+                serializer.writeIdentifier(alias)
                 serializer.writePeriod()
             } else {
-                if let space = spaceName {
-                    serializer.writeQuote()
-                    serializer.write(space)
-                    serializer.writeQuote()
+                if let space = schemaName {
+                    serializer.writeIdentifier(space)
                     serializer.writePeriod()
                 }
 
-                if let schema = schemaName {
-                    serializer.writeQuote()
-                    serializer.write(schema)
-                    serializer.writeQuote()
+                if let schema = tableName {
+                    serializer.writeIdentifier(schema)
                     serializer.writePeriod()
                 }
             }
 
-            serializer.writeQuote()
-            serializer.write(self.columnName)
-            serializer.writeQuote()
+            serializer.writeIdentifier(self.columnName)
 
-            serializer.writeSpace()
-            serializer.write("AS")
-            serializer.writeSpace()
+            serializer.writeSpaced("AS")
 
-            serializer.writeQuote()
-            serializer.write(self.columnAlias)
-            serializer.writeQuote()
+            serializer.writeIdentifier(self.columnAlias)
         }
     }
 }
@@ -83,57 +70,45 @@ extension ColumnExpression.Alias: SelectSQLExpression {
     public var selectSqlExpression: some SQLExpression {
         _Select(
             aliasName: column.aliasName,
-            spaceName: column.spaceName,
             schemaName: column.schemaName,
+            tableName: column.tableName,
             columnName: column.columnName,
             dataType: T.postgresDataType,
             columnAlias: alias
         )
     }
 
-    private struct _Select: SQLExpression {
+    struct _Select: SQLExpression {
         let aliasName: String?
-        let spaceName: String?
         let schemaName: String?
+        let tableName: String?
         let columnName: String
         let dataType: PostgresDataType
         let columnAlias: String
 
         func serialize(to serializer: inout SQLSerializer) {
             if let alias = aliasName {
-                serializer.writeQuote()
-                serializer.write(alias)
-                serializer.writeQuote()
+                serializer.writeIdentifier(alias)
                 serializer.writePeriod()
             } else {
-                if let space = spaceName {
-                    serializer.writeQuote()
-                    serializer.write(space)
-                    serializer.writeQuote()
+                if let space = schemaName {
+                    serializer.writeIdentifier(space)
                     serializer.writePeriod()
                 }
 
-                if let schema = schemaName {
-                    serializer.writeQuote()
-                    serializer.write(schema)
-                    serializer.writeQuote()
+                if let schema = tableName {
+                    serializer.writeIdentifier(schema)
                     serializer.writePeriod()
                 }
             }
 
-            serializer.writeQuote()
-            serializer.write(self.columnName)
-            serializer.writeQuote()
+            serializer.writeIdentifier(self.columnName)
 
-            dataType.serialize(to: &serializer)
+            serializer.writeCast(dataType)
 
-            serializer.writeSpace()
-            serializer.write("AS")
-            serializer.writeSpace()
+            serializer.writeSpaced("AS")
 
-            serializer.writeQuote()
-            serializer.write(self.columnAlias)
-            serializer.writeQuote()
+            serializer.writeIdentifier(self.columnAlias)
         }
     }
 }
@@ -142,57 +117,45 @@ extension ColumnExpression.Alias: MutationSQLExpression {
     public var mutationSqlExpression: some SQLExpression {
         _Mutation(
             aliasName: column.aliasName,
-            spaceName: column.spaceName,
             schemaName: column.schemaName,
+            tableName: column.tableName,
             columnName: column.columnName,
             dataType: T.postgresDataType,
             columnAlias: alias
         )
     }
 
-    private struct _Mutation: SQLExpression {
+    struct _Mutation: SQLExpression {
         let aliasName: String?
-        let spaceName: String?
         let schemaName: String?
+        let tableName: String?
         let columnName: String
         let dataType: PostgresDataType
         let columnAlias: String
 
         func serialize(to serializer: inout SQLSerializer) {
             if let alias = aliasName {
-                serializer.writeQuote()
-                serializer.write(alias)
-                serializer.writeQuote()
+                serializer.writeIdentifier(alias)
                 serializer.writePeriod()
             } else {
-                if let space = spaceName {
-                    serializer.writeQuote()
-                    serializer.write(space)
-                    serializer.writeQuote()
+                if let space = schemaName {
+                    serializer.writeIdentifier(space)
                     serializer.writePeriod()
                 }
 
-                if let schema = schemaName {
-                    serializer.writeQuote()
-                    serializer.write(schema)
-                    serializer.writeQuote()
+                if let schema = tableName {
+                    serializer.writeIdentifier(schema)
                     serializer.writePeriod()
                 }
             }
 
-            serializer.writeQuote()
-            serializer.write(self.columnName)
-            serializer.writeQuote()
+            serializer.writeIdentifier(self.columnName)
 
-            self.dataType.serialize(to: &serializer)
+            serializer.writeCast(dataType)
 
-            serializer.writeSpace()
-            serializer.write("AS")
-            serializer.writeSpace()
+            serializer.writeSpaced("AS")
 
-            serializer.writeQuote()
-            serializer.write(self.columnAlias)
-            serializer.writeQuote()
+            serializer.writeIdentifier(self.columnAlias)
         }
     }
 }
@@ -200,5 +163,3 @@ extension ColumnExpression.Alias: MutationSQLExpression {
 extension ColumnExpression.Alias: Coalescable {}
 
 extension ColumnExpression.Alias: Concatenatable where T: CustomStringConvertible {}
-
-extension ColumnExpression.Alias: JsonbExtractable where T: Codable {}

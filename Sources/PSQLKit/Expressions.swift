@@ -7,7 +7,14 @@ public typealias MIN = MinExpression
 public typealias SUM = SumExpression
 public typealias COUNT = CountExpression
 public typealias AVG = AverageExpression
+public typealias JSON_EXTRACT_PATH_TEXT = JsonExtractPathTextExpression
 public typealias JSONB_EXTRACT_PATH_TEXT = JsonbExtractPathTextExpression
+public typealias JSON_EXTRACT_PATH = JsonExtractPathExpression
+public typealias JSONB_EXTRACT_PATH = JsonbExtractPathExpression
+public typealias JSON_OBJECT_AGG = JsonObjectAggExpression
+public typealias JSONB_OBJECT_AGG = JsonbObjectAggExpression
+public typealias JSON_BUILD_OBJECT = JsonBuildObjectExpression
+public typealias JSONB_BUILD_OBJECT = JsonbBuildObjectExpression
 
 public typealias ARRAY_AGG = ArrayAggregateExpression
 public typealias ARRAY_APPEND = ArrayAppendExpression
@@ -26,6 +33,8 @@ public typealias CONCAT = ConcatenateExpression
 
 public typealias DATE_TRUNC = DateTruncExpression
 public typealias DATE_PART = DatePartExpression
+
+public typealias CROSSTAB = CrosstabExpression
 
 public protocol Expression {}
 public protocol AggregateExpression: Expression {}

@@ -1,30 +1,15 @@
 // GroupTests.swift
 // Copyright (c) 2024 hiimtmac inc.
 
-import XCTest
-@testable import PSQLKit
+import SQLKit
+import Testing
+import PSQLKit
 
-final class GroupTests: PSQLTestCase {
+@Suite
+struct GroupTests {
+    @Test
     func testLength() {
-        SELECT {
-            FluentModel.$id
-            FluentModel.$age
-            FluentModel.$name
-            FluentModel.$id
-            FluentModel.$age
-            FluentModel.$name
-            FluentModel.$id
-            FluentModel.$age
-            FluentModel.$id
-            FluentModel.$age
-            FluentModel.$name
-            FluentModel.$id
-            FluentModel.$age
-            FluentModel.$name
-            FluentModel.$id
-            FluentModel.$age
-        }
-        .serialize(to: &fluentSerializer)
+        var serializer = SQLSerializer.test
 
         SELECT {
             PSQLModel.$id
@@ -44,10 +29,9 @@ final class GroupTests: PSQLTestCase {
             PSQLModel.$id
             PSQLModel.$age
         }
-        .serialize(to: &psqlkitSerializer)
+        .serialize(to: &serializer)
 
         let compare = #"SELECT "my_model"."id"::UUID, "my_model"."age"::INTEGER, "my_model"."name"::TEXT, "my_model"."id"::UUID, "my_model"."age"::INTEGER, "my_model"."name"::TEXT, "my_model"."id"::UUID, "my_model"."age"::INTEGER, "my_model"."id"::UUID, "my_model"."age"::INTEGER, "my_model"."name"::TEXT, "my_model"."id"::UUID, "my_model"."age"::INTEGER, "my_model"."name"::TEXT, "my_model"."id"::UUID, "my_model"."age"::INTEGER"#
-        XCTAssertEqual(fluentSerializer.sql, compare)
-        XCTAssertEqual(psqlkitSerializer.sql, compare)
+        #expect(serializer.sql == compare)
     }
 }

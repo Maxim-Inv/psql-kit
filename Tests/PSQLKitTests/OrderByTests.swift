@@ -1,73 +1,58 @@
 // OrderByTests.swift
 // Copyright (c) 2024 hiimtmac inc.
 
-import XCTest
-@testable import PSQLKit
+import SQLKit
+import Testing
+import PSQLKit
 
-final class OrderByTests: PSQLTestCase {
-    let f = FluentModel.as("x")
+@Suite
+struct OrderByTests {
     let p = PSQLModel.as("x")
 
+    @Test
     func testOrderModel() {
-        ORDERBY {
-            FluentModel.$name
-        }
-        .serialize(to: &fluentSerializer)
+        var serializer = SQLSerializer.test
 
         ORDERBY {
             PSQLModel.$name
         }
-        .serialize(to: &psqlkitSerializer)
+        .serialize(to: &serializer)
 
         let compare = #"ORDER BY "my_model"."name""#
-        XCTAssertEqual(fluentSerializer.sql, compare)
-        XCTAssertEqual(psqlkitSerializer.sql, compare)
+        #expect(serializer.sql == compare)
     }
 
+    @Test
     func testOrderModelAlias() {
-        ORDERBY {
-            f.$name.asc()
-        }
-        .serialize(to: &fluentSerializer)
+        var serializer = SQLSerializer.test
 
         ORDERBY {
             p.$name.asc()
         }
-        .serialize(to: &psqlkitSerializer)
+        .serialize(to: &serializer)
 
         let compare = #"ORDER BY "x"."name" ASC"#
-        XCTAssertEqual(fluentSerializer.sql, compare)
-        XCTAssertEqual(psqlkitSerializer.sql, compare)
+        #expect(serializer.sql == compare)
     }
 
+    @Test
     func testOrderMultiple() {
-        ORDERBY {
-            FluentModel.$name.asc()
-            f.$name.desc()
-            f.$id
-        }
-        .serialize(to: &fluentSerializer)
+        var serializer = SQLSerializer.test
 
         ORDERBY {
             PSQLModel.$name.asc()
             p.$name.desc()
             p.$id
         }
-        .serialize(to: &psqlkitSerializer)
+        .serialize(to: &serializer)
 
         let compare = #"ORDER BY "my_model"."name" ASC, "x"."name" DESC, "x"."id""#
-        XCTAssertEqual(fluentSerializer.sql, compare)
-        XCTAssertEqual(psqlkitSerializer.sql, compare)
+        #expect(serializer.sql == compare)
     }
 
+    @Test
     func testOrderDirections() {
-        ORDERBY {
-            f.$name
-            FluentModel.$name.asc()
-            FluentModel.$name.desc()
-            f.$name.order(.asc)
-        }
-        .serialize(to: &fluentSerializer)
+        var serializer = SQLSerializer.test
 
         ORDERBY {
             p.$name
@@ -75,39 +60,30 @@ final class OrderByTests: PSQLTestCase {
             PSQLModel.$name.desc()
             p.$name.order(.asc)
         }
-        .serialize(to: &psqlkitSerializer)
+        .serialize(to: &serializer)
 
         let compare = #"ORDER BY "x"."name", "my_model"."name" ASC, "my_model"."name" DESC, "x"."name" ASC"#
-        XCTAssertEqual(fluentSerializer.sql, compare)
-        XCTAssertEqual(psqlkitSerializer.sql, compare)
+        #expect(serializer.sql == compare)
     }
 
+    @Test
     func testOrderRaw() {
-        ORDERBY {
-            RawColumn<String>("cool").desc()
-        }
-        .serialize(to: &fluentSerializer)
+        var serializer = SQLSerializer.test
 
         ORDERBY {
             RawColumn<String>("cool").desc()
         }
-        .serialize(to: &psqlkitSerializer)
+        .serialize(to: &serializer)
 
         let compare = #"ORDER BY "cool" DESC"#
-        XCTAssertEqual(fluentSerializer.sql, compare)
-        XCTAssertEqual(psqlkitSerializer.sql, compare)
+        #expect(serializer.sql == compare)
     }
 
+    @Test
     func testIfElseTrue() {
+        var serializer = SQLSerializer.test
+
         let bool = true
-        ORDERBY {
-            if bool {
-                f.$name
-            } else {
-                f.$age
-            }
-        }
-        .serialize(to: &fluentSerializer)
 
         ORDERBY {
             if bool {
@@ -116,23 +92,17 @@ final class OrderByTests: PSQLTestCase {
                 p.$age
             }
         }
-        .serialize(to: &psqlkitSerializer)
+        .serialize(to: &serializer)
 
         let compare = #"ORDER BY "x"."name""#
-        XCTAssertEqual(fluentSerializer.sql, compare)
-        XCTAssertEqual(psqlkitSerializer.sql, compare)
+        #expect(serializer.sql == compare)
     }
 
+    @Test
     func testIfElseFalse() {
+        var serializer = SQLSerializer.test
+
         let bool = false
-        ORDERBY {
-            if bool {
-                f.$name
-            } else {
-                f.$age
-            }
-        }
-        .serialize(to: &fluentSerializer)
 
         ORDERBY {
             if bool {
@@ -141,14 +111,16 @@ final class OrderByTests: PSQLTestCase {
                 p.$age
             }
         }
-        .serialize(to: &psqlkitSerializer)
+        .serialize(to: &serializer)
 
         let compare = #"ORDER BY "x"."age""#
-        XCTAssertEqual(fluentSerializer.sql, compare)
-        XCTAssertEqual(psqlkitSerializer.sql, compare)
+        #expect(serializer.sql == compare)
     }
 
+    @Test
     func testSwitch() {
+        var serializer = SQLSerializer.test
+
         enum Test {
             case one
             case two
@@ -159,17 +131,6 @@ final class OrderByTests: PSQLTestCase {
 
         ORDERBY {
             switch option {
-            case .one: f.$name
-            case .two: f.$age
-            case .three:
-                f.$age
-                f.$name
-            }
-        }
-        .serialize(to: &fluentSerializer)
-
-        ORDERBY {
-            switch option {
             case .one: p.$name
             case .two: p.$age
             case .three:
@@ -177,64 +138,54 @@ final class OrderByTests: PSQLTestCase {
                 p.$name
             }
         }
-        .serialize(to: &psqlkitSerializer)
+        .serialize(to: &serializer)
 
         let compare = #"ORDER BY "x"."age""#
-        XCTAssertEqual(fluentSerializer.sql, compare)
-        XCTAssertEqual(psqlkitSerializer.sql, compare)
+        #expect(serializer.sql == compare)
     }
 
+    @Test
     func testIfTrue() {
+        var serializer = SQLSerializer.test
+
         let bool = true
-        ORDERBY {
-            if bool {
-                f.$name
-            }
-        }
-        .serialize(to: &fluentSerializer)
 
         ORDERBY {
             if bool {
                 p.$name
             }
         }
-        .serialize(to: &psqlkitSerializer)
+        .serialize(to: &serializer)
 
         let compare = #"ORDER BY "x"."name""#
-        XCTAssertEqual(fluentSerializer.sql, compare)
-        XCTAssertEqual(psqlkitSerializer.sql, compare)
+        #expect(serializer.sql == compare)
     }
 
+    @Test
     func testIfFalse() {
+        var serializer = SQLSerializer.test
+
         let bool = false
-        ORDERBY {
-            if bool {
-                f.$name
-            }
-        }
-        .serialize(to: &fluentSerializer)
 
         ORDERBY {
             if bool {
                 p.$name
             }
         }
-        .serialize(to: &psqlkitSerializer)
+        .serialize(to: &serializer)
 
         let compare = #""#
-        XCTAssertEqual(fluentSerializer.sql, compare)
-        XCTAssertEqual(psqlkitSerializer.sql, compare)
+        #expect(serializer.sql == compare)
     }
 
+    @Test
     func testEmpty() {
-        ORDERBY {}
-            .serialize(to: &fluentSerializer)
+        var serializer = SQLSerializer.test
 
         ORDERBY {}
-            .serialize(to: &psqlkitSerializer)
+            .serialize(to: &serializer)
 
         let compare = #""#
-        XCTAssertEqual(fluentSerializer.sql, compare)
-        XCTAssertEqual(psqlkitSerializer.sql, compare)
+        #expect(serializer.sql == compare)
     }
 }

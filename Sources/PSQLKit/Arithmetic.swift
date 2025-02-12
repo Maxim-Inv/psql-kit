@@ -1,9 +1,8 @@
 // Arithmetic.swift
 // Copyright (c) 2024 hiimtmac inc.
 
-import struct PostgresNIO.PostgresDataType
-import protocol SQLKit.SQLExpression
-import struct SQLKit.SQLSerializer
+import PostgresNIO
+import SQLKit
 
 public struct ArithmeticOperator: SQLExpression {
     let value: String
@@ -22,9 +21,9 @@ public struct ArithmeticOperator: SQLExpression {
     }
 }
 
-public struct ArithmeticExpression<T, U> where
-    T: TypeEquatable,
-    U: TypeEquatable,
+public struct ArithmeticExpression<T, U>: Sendable where
+    T: TypeEquatable & Sendable,
+    U: TypeEquatable & Sendable,
     T.CompareType == U.CompareType
 {
     let lhs: T
@@ -50,7 +49,7 @@ extension ArithmeticExpression: SelectSQLExpression where
         _Select(lhs: self.lhs, operator: self.operator, rhs: self.rhs)
     }
 
-    private struct _Select: SQLExpression {
+    struct _Select: SQLExpression {
         let lhs: T
         let `operator`: ArithmeticOperator
         let rhs: U
@@ -63,7 +62,7 @@ extension ArithmeticExpression: SelectSQLExpression where
             serializer.writeSpace()
             self.rhs.selectSqlExpression.serialize(to: &serializer)
             serializer.write(")")
-            PostgresDataType.numeric.serialize(to: &serializer)
+            serializer.writeCast(.numeric)
         }
     }
 }
@@ -82,7 +81,7 @@ extension ArithmeticExpression: CompareSQLExpression where
         _Compare(lhs: self.lhs, operator: self.operator, rhs: self.rhs)
     }
 
-    private struct _Compare: SQLExpression {
+    struct _Compare: SQLExpression {
         let lhs: T
         let `operator`: ArithmeticOperator
         let rhs: U

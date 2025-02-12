@@ -1,10 +1,9 @@
 // DeleteDirective.swift
 // Copyright (c) 2024 hiimtmac inc.
 
-import protocol SQLKit.SQLExpression
-import struct SQLKit.SQLSerializer
+import SQLKit
 
-public struct DeleteDirective<T: FromSQLExpression>: SQLExpression {
+public struct DeleteDirective<T>: SQLExpression where T: FromSQLExpression & Sendable {
     let content: T
 
     init(_ content: T) {

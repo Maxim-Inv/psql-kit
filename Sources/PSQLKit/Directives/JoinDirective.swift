@@ -1,11 +1,9 @@
 // JoinDirective.swift
 // Copyright (c) 2024 hiimtmac inc.
 
-import protocol SQLKit.SQLExpression
-import enum SQLKit.SQLJoinMethod
-import struct SQLKit.SQLSerializer
+import SQLKit
 
-public struct JoinDirective<Table: FromSQLExpression, T: JoinSQLExpression>: SQLExpression {
+public struct JoinDirective<Table, T>: SQLExpression where Table: FromSQLExpression & Sendable, T: JoinSQLExpression & Sendable {
     let table: Table
     let method: SQLJoinMethod
     let content: T
@@ -25,13 +23,9 @@ public struct JoinDirective<Table: FromSQLExpression, T: JoinSQLExpression>: SQL
     public func serialize(to serializer: inout SQLSerializer) {
         guard !content.joinIsNull else { return }
         self.method.serialize(to: &serializer)
-        serializer.writeSpace()
-        serializer.write("JOIN")
-        serializer.writeSpace()
+        serializer.writeSpaced("JOIN")
         self.table.fromSqlExpression.serialize(to: &serializer)
-        serializer.writeSpace()
-        serializer.write("ON")
-        serializer.writeSpace()
+        serializer.writeSpaced("ON")
         content.joinSqlExpression.serialize(to: &serializer)
     }
 }

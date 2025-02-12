@@ -1,38 +1,14 @@
 // HavingBuilder.swift
 // Copyright (c) 2024 hiimtmac inc.
 
-import protocol SQLKit.SQLExpression
-import struct SQLKit.SQLList
-import struct SQLKit.SQLRaw
-import struct SQLKit.SQLSerializer
+import SQLKit
 
 extension EmptyExpression: HavingSQLExpression {
     public var havingSqlExpression: some SQLExpression {
-        _Having()
+        _Empty()
     }
 
     public var havingIsNull: Bool { true }
-
-    private struct _Having: SQLExpression {
-        func serialize(to serializer: inout SQLSerializer) {
-            fatalError("Should not be serialized")
-        }
-    }
-}
-
-public struct HavingTouple<each T: HavingSQLExpression>: HavingSQLExpression {
-    let content: (repeat each T)
-
-    init(_ content: repeat each T) {
-        self.content = (repeat each content)
-    }
-
-    // typing this `some SQLExpression` causes "SwiftEmitModule failed with nonzero exit code"
-    public var havingSqlExpression: SQLList {
-        var collector = Collector()
-        _ = (repeat collector.append(exp: each content))
-        return SQLList(collector.expressions, separator: SQLRaw(" AND "))
-    }
 }
 
 extension _ConditionalContent: HavingSQLExpression where T: HavingSQLExpression, U: HavingSQLExpression {
@@ -73,7 +49,7 @@ public enum HavingBuilder {
     @_disfavoredOverload
     public static func buildBlock<each Content>(
         _ content: repeat each Content
-    ) -> HavingTouple< repeat each Content> where repeat each Content: HavingSQLExpression {
+    ) -> QueryTuple< repeat each Content> where repeat each Content: HavingSQLExpression {
         .init(repeat each content)
     }
 }

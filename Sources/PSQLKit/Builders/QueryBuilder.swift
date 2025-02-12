@@ -1,38 +1,14 @@
 // QueryBuilder.swift
 // Copyright (c) 2024 hiimtmac inc.
 
-import protocol SQLKit.SQLExpression
-import struct SQLKit.SQLList
-import struct SQLKit.SQLRaw
-import struct SQLKit.SQLSerializer
+import SQLKit
 
 extension EmptyExpression: QuerySQLExpression {
     public var querySqlExpression: some SQLExpression {
-        _Query()
+        _Empty()
     }
 
     public var queryIsNull: Bool { true }
-
-    private struct _Query: SQLExpression {
-        func serialize(to serializer: inout SQLSerializer) {
-            fatalError("Should not be serialized")
-        }
-    }
-}
-
-public struct QueryTouple<each T: QuerySQLExpression>: QuerySQLExpression {
-    let content: (repeat each T)
-
-    init(_ content: repeat each T) {
-        self.content = (repeat each content)
-    }
-
-    // typing this `some SQLExpression` causes "SwiftEmitModule failed with nonzero exit code"
-    public var querySqlExpression: SQLList {
-        var collector = Collector()
-        _ = (repeat collector.append(exp: each content))
-        return SQLList(collector.expressions, separator: SQLRaw(" "))
-    }
 }
 
 extension _ConditionalContent: QuerySQLExpression where T: QuerySQLExpression, U: QuerySQLExpression {
@@ -73,7 +49,7 @@ public enum QueryBuilder {
     @_disfavoredOverload
     public static func buildBlock<each Content>(
         _ content: repeat each Content
-    ) -> QueryTouple< repeat each Content> where repeat each Content: QuerySQLExpression {
+    ) -> QueryTuple< repeat each Content> where repeat each Content: QuerySQLExpression {
         .init(repeat each content)
     }
 }

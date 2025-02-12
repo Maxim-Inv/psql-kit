@@ -1,38 +1,14 @@
 // WhereBuilder.swift
 // Copyright (c) 2024 hiimtmac inc.
 
-import protocol SQLKit.SQLExpression
-import struct SQLKit.SQLList
-import struct SQLKit.SQLRaw
-import struct SQLKit.SQLSerializer
+import SQLKit
 
 extension EmptyExpression: WhereSQLExpression {
     public var whereSqlExpression: some SQLExpression {
-        _Where()
+        _Empty()
     }
 
     public var whereIsNull: Bool { true }
-
-    private struct _Where: SQLExpression {
-        func serialize(to serializer: inout SQLSerializer) {
-            fatalError("Should not be serialized")
-        }
-    }
-}
-
-public struct WhereTouple<each T: WhereSQLExpression>: WhereSQLExpression {
-    let content: (repeat each T)
-
-    init(_ content: repeat each T) {
-        self.content = (repeat each content)
-    }
-
-    // typing this `some SQLExpression` causes "SwiftEmitModule failed with nonzero exit code"
-    public var whereSqlExpression: SQLList {
-        var collector = Collector()
-        _ = (repeat collector.append(exp: each content))
-        return SQLList(collector.expressions, separator: SQLRaw(" AND "))
-    }
 }
 
 extension _ConditionalContent: WhereSQLExpression where T: WhereSQLExpression, U: WhereSQLExpression {
@@ -73,7 +49,7 @@ public enum WhereBuilder {
     @_disfavoredOverload
     public static func buildBlock<each Content>(
         _ content: repeat each Content
-    ) -> WhereTouple< repeat each Content> where repeat each Content: WhereSQLExpression {
+    ) -> QueryTuple< repeat each Content> where repeat each Content: WhereSQLExpression {
         .init(repeat each content)
     }
 }

@@ -1,12 +1,11 @@
 // Mutation.swift
 // Copyright (c) 2024 hiimtmac inc.
 
-import protocol SQLKit.SQLExpression
-import struct SQLKit.SQLSerializer
+import SQLKit
 
-public struct Mutation<T, U> where
-    T: TypeEquatable,
-    U: TypeEquatable,
+public struct Mutation<T, U>: Sendable where
+    T: TypeEquatable & Sendable,
+    U: TypeEquatable & Sendable,
     T.CompareType == U.CompareType
 {
     let column: T
@@ -30,15 +29,13 @@ extension Mutation: UpdateSQLExpression where
     T: MutationSQLExpression,
     U: MutationSQLExpression
 {
-    private struct _Update: SQLExpression {
+    struct _Update: SQLExpression {
         let column: T
         let value: U
 
         func serialize(to serializer: inout SQLSerializer) {
             self.column.mutationSqlExpression.serialize(to: &serializer)
-            serializer.writeSpace()
-            serializer.write("=")
-            serializer.writeSpace()
+            serializer.writeSpaced("=")
             self.value.mutationSqlExpression.serialize(to: &serializer)
         }
     }

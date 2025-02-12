@@ -1,49 +1,31 @@
 // PSQLTests.swift
 // Copyright (c) 2024 hiimtmac inc.
 
-import FluentKit
+import Foundation
 import PostgresKit
 import SQLKit
-import XCTest
 @testable import PSQLKit
 
-final class FluentModel: Model, Table {
-    static let schema = "my_model"
-
-    @ID
+@CTE("my_model")
+struct PSQLModel {
     var id: UUID?
-    @OptionalField(key: "name")
     var name: String?
-    @Field(key: "title")
     var title: String
-    @Field(key: "age")
     var age: Int
-    @Field(key: "money")
     var money: Double
-    @Field(key: "birthday")
     var birthday: Date
-    @Field(key: "category")
     var category: Category
-    @Group(key: "pet")
     var pet: Pet
 
-    init() {}
-
-    final class Pet: Fields, TableObject {
-        @Field(key: "name")
+    @CTE("pets")
+    struct Pet: JSONBCol {
         var name: String
-        @Field(key: "type")
         var type: String
-        @Group(key: "info")
         var info: Info
 
-        init() {}
-
-        final class Info: Fields, TableObject {
-            @Field(key: "name")
+        @CTE("infos")
+        struct Info: JSONBCol {
             var name: String
-
-            init() {}
         }
     }
 
@@ -53,57 +35,4 @@ final class FluentModel: Model, Table {
 
         static var postgresDataType: PostgresDataType { .text }
     }
-}
-
-struct PSQLModel: Table {
-    static let schema = "my_model"
-
-    @Column(key: "id")
-    var id: UUID?
-    @OptionalColumn(key: "name")
-    var name: String?
-    @Column(key: "title")
-    var title: String
-    @Column(key: "age")
-    var age: Int
-    @Column(key: "money")
-    var money: Double
-    @Column(key: "birthday")
-    var birthday: Date
-    @Column(key: "category")
-    var category: Category
-    @NestedColumn(key: "pet")
-    var pet: Pet
-
-    init() {}
-
-    struct Pet: TableObject, Codable {
-        @Column(key: "name")
-        var name: String
-        @Column(key: "type")
-        var type: String
-        @NestedColumn(key: "info")
-        var info: Info
-
-        init() {}
-
-        struct Info: TableObject, Codable {
-            @Column(key: "name")
-            var name: String
-
-            init() {}
-        }
-    }
-
-    enum Category: String, Codable, Equatable, TypeEquatable, PSQLExpression {
-        case yes
-        case no
-
-        static var postgresDataType: PostgresDataType { .text }
-    }
-}
-
-class PSQLTestCase: XCTestCase {
-    var fluentSerializer = SQLSerializer(database: TestSQLDatabase())
-    var psqlkitSerializer = SQLSerializer(database: TestSQLDatabase())
 }

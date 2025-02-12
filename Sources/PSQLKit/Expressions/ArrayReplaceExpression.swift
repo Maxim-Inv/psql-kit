@@ -1,14 +1,13 @@
 // ArrayReplaceExpression.swift
 // Copyright (c) 2024 hiimtmac inc.
 
-import struct PostgresNIO.PostgresDataType
-import protocol SQLKit.SQLExpression
-import struct SQLKit.SQLSerializer
+import PostgresNIO
+import SQLKit
 
-public struct ArrayReplaceExpression<Content, T, U>: AggregateExpression where
-    Content: PSQLArrayRepresentable & TypeEquatable,
-    T: TypeEquatable,
-    U: TypeEquatable,
+public struct ArrayReplaceExpression<Content, T, U>: AggregateExpression, Sendable where
+    Content: PSQLArrayRepresentable & TypeEquatable & Sendable,
+    T: TypeEquatable & Sendable,
+    U: TypeEquatable & Sendable,
     Content.CompareType == T.CompareType,
     T.CompareType == U.CompareType
 {
@@ -33,7 +32,7 @@ extension ArrayReplaceExpression: SelectSQLExpression where
         _Select(content: self.content, find: self.find, replace: self.replace)
     }
 
-    private struct _Select: SQLExpression {
+    struct _Select: SQLExpression {
         let content: Content
         let find: T
         let replace: U
@@ -49,7 +48,7 @@ extension ArrayReplaceExpression: SelectSQLExpression where
             serializer.writeSpace()
             self.replace.selectSqlExpression.serialize(to: &serializer)
             serializer.write(")")
-            PostgresDataType.array(T.postgresDataType).serialize(to: &serializer)
+            serializer.writeCast(PostgresDataType.array(T.postgresDataType))
         }
     }
 }
@@ -63,7 +62,7 @@ extension ArrayReplaceExpression: CompareSQLExpression where
         _Compare(content: self.content, find: self.find, replace: self.replace)
     }
 
-    private struct _Compare: SQLExpression {
+    struct _Compare: SQLExpression {
         let content: Content
         let find: T
         let replace: U

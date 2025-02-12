@@ -1,12 +1,11 @@
 // ArrayLowerExpression.swift
 // Copyright (c) 2024 hiimtmac inc.
 
-import struct PostgresNIO.PostgresDataType
-import protocol SQLKit.SQLExpression
-import struct SQLKit.SQLSerializer
+import PostgresNIO
+import SQLKit
 
-public struct ArrayLowerExpression<Content>: AggregateExpression where
-    Content: PSQLArrayRepresentable
+public struct ArrayLowerExpression<Content>: AggregateExpression, Sendable where
+    Content: PSQLArrayRepresentable & Sendable
 {
     let content: Content
     let dimension: Int
@@ -24,7 +23,7 @@ extension ArrayLowerExpression: SelectSQLExpression where
         _Select(content: self.content, dimension: self.dimension)
     }
 
-    private struct _Select: SQLExpression {
+    struct _Select: SQLExpression {
         let content: Content
         let dimension: Int
 
@@ -36,7 +35,7 @@ extension ArrayLowerExpression: SelectSQLExpression where
             serializer.writeSpace()
             self.dimension.serialize(to: &serializer)
             serializer.write(")")
-            PostgresDataType.int4.serialize(to: &serializer)
+            serializer.writeCast(.int4)
         }
     }
 }
@@ -48,7 +47,7 @@ extension ArrayLowerExpression: CompareSQLExpression where
         _Compare(content: self.content, dimension: self.dimension)
     }
 
-    private struct _Compare: SQLExpression {
+    struct _Compare: SQLExpression {
         let content: Content
         let dimension: Int
 

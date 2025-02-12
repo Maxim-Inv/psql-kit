@@ -1,15 +1,17 @@
 // Array+PSQL.swift
 // Copyright (c) 2024 hiimtmac inc.
 
-import struct PostgresNIO.PostgresDataType
-import protocol SQLKit.SQLExpression
-import struct SQLKit.SQLList
-import struct SQLKit.SQLSerializer
+import PostgresNIO
+import SQLKit
 
-extension Array: SQLExpression where Element: SQLExpression {
+extension Array: @retroactive SQLExpression where Element: SQLExpression {
     public func serialize(to serializer: inout SQLSerializer) {
         serializer.write("(")
-        SQLList(self).serialize(to: &serializer)
+        if self.isEmpty {
+            serializer.writeNull()
+        } else {
+            SQLList(self).serialize(to: &serializer)
+        }
         serializer.write(")")
     }
 }

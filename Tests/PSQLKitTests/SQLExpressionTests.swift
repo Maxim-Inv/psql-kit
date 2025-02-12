@@ -1,17 +1,19 @@
 // SQLExpressionTests.swift
 // Copyright (c) 2024 hiimtmac inc.
 
-import XCTest
-@testable import PSQLKit
+import Foundation
+import Testing
+import PSQLKit
 
-final class SQLExpressionTests: XCTestCase {
-    struct Thing: Table {
-        @OptionalColumn(key: "id")
+@Suite
+struct SQLExpressionTests {
+    @CTE("Thing")
+    struct Thing {
         var id: UUID?
-        @Column(key: "name")
         var name: String
     }
 
+    @Test
     func testExpressionRaw() {
         let q: some PSQLQuery = QUERY {
             SELECT {
@@ -22,6 +24,6 @@ final class SQLExpressionTests: XCTestCase {
         }
 
         let (sql, _) = q.raw()
-        XCTAssertEqual(sql, #"SELECT "Thing"."id"::UUID, "Thing"."name"::TEXT FROM "Thing""#)
+        #expect(sql == #"SELECT "Thing"."id"::UUID, "Thing"."name"::TEXT FROM "Thing""#)
     }
 }

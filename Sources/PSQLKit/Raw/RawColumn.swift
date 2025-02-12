@@ -1,11 +1,10 @@
 // RawColumn.swift
 // Copyright (c) 2024 hiimtmac inc.
 
-import struct PostgresNIO.PostgresDataType
-import protocol SQLKit.SQLExpression
-import struct SQLKit.SQLSerializer
+import PostgresNIO
+import SQLKit
 
-public struct RawColumn<T> where T: PSQLExpression {
+public struct RawColumn<T>: Sendable where T: PSQLExpression {
     let column: String
 
     public init(_ column: String) {
@@ -24,15 +23,13 @@ extension RawColumn: TypeEquatable where T: TypeEquatable {
 }
 
 extension RawColumn: SelectSQLExpression {
-    private struct _Select: SQLExpression {
+    struct _Select: SQLExpression {
         let column: String
         let dataType: PostgresDataType
 
         func serialize(to serializer: inout SQLSerializer) {
-            serializer.writeQuote()
-            serializer.write(self.column)
-            serializer.writeQuote()
-            self.dataType.serialize(to: &serializer)
+            serializer.writeIdentifier(self.column)
+            serializer.writeCast(dataType)
         }
     }
 
@@ -42,13 +39,11 @@ extension RawColumn: SelectSQLExpression {
 }
 
 extension RawColumn: GroupBySQLExpression {
-    private struct _GroupBy: SQLExpression {
+    struct _GroupBy: SQLExpression {
         let column: String
 
         func serialize(to serializer: inout SQLSerializer) {
-            serializer.writeQuote()
-            serializer.write(self.column)
-            serializer.writeQuote()
+            serializer.writeIdentifier(self.column)
         }
     }
 
@@ -58,13 +53,11 @@ extension RawColumn: GroupBySQLExpression {
 }
 
 extension RawColumn: OrderBySQLExpression {
-    private struct _OrderBy: SQLExpression {
+    struct _OrderBy: SQLExpression {
         let column: String
 
         func serialize(to serializer: inout SQLSerializer) {
-            serializer.writeQuote()
-            serializer.write(self.column)
-            serializer.writeQuote()
+            serializer.writeIdentifier(self.column)
         }
     }
 
@@ -86,13 +79,11 @@ extension RawColumn: OrderBySQLExpression {
 }
 
 extension RawColumn: CompareSQLExpression {
-    private struct _Compare: SQLExpression {
+    struct _Compare: SQLExpression {
         let column: String
 
         func serialize(to serializer: inout SQLSerializer) {
-            serializer.writeQuote()
-            serializer.write(self.column)
-            serializer.writeQuote()
+            serializer.writeIdentifier(self.column)
         }
     }
 
@@ -104,7 +95,7 @@ extension RawColumn: CompareSQLExpression {
 // MARK: - Alias
 
 extension RawColumn {
-    public struct Alias {
+    public struct Alias: Sendable {
         let column: RawColumn<T>
         let alias: String
 
@@ -120,24 +111,26 @@ extension RawColumn.Alias: TypeEquatable where T: TypeEquatable {
 }
 
 extension RawColumn.Alias: SelectSQLExpression {
-    private struct _Select: SQLExpression {
+    struct _Select: SQLExpression {
         let column: RawColumn<T>
         let alias: String
 
         func serialize(to serializer: inout SQLSerializer) {
             self.column.selectSqlExpression.serialize(to: &serializer)
 
-            serializer.writeSpace()
-            serializer.write("AS")
-            serializer.writeSpace()
+            serializer.writeSpaced("AS")
 
-            serializer.writeQuote()
-            serializer.write(self.alias)
-            serializer.writeQuote()
+            serializer.writeIdentifier(self.alias)
         }
     }
 
     public var selectSqlExpression: some SQLExpression {
         _Select(column: self.column, alias: alias)
+    }
+}
+
+extension String {
+    public func `as`<T>(columnOf type: T.Type) -> RawColumn<T> where T: PSQLExpression {
+        RawColumn(self)
     }
 }

@@ -1,19 +1,16 @@
 // String+PSQL.swift
 // Copyright (c) 2024 hiimtmac inc.
 
-import struct PostgresNIO.PostgresDataType
-import protocol SQLKit.SQLExpression
-import struct SQLKit.SQLSerializer
+import PostgresNIO
+import SQLKit
 
 extension String: PSQLExpression {
     public static var postgresDataType: PostgresDataType { .text }
 }
 
-extension String: SQLExpression {
+extension String: @retroactive SQLExpression {
     public func serialize(to serializer: inout SQLSerializer) {
-        serializer.write("'")
-        serializer.write("\(self)")
-        serializer.write("'")
+        serializer.writeLiteral(self)
     }
 }
 

@@ -1,10 +1,9 @@
 // CountExpression.swift
 // Copyright (c) 2024 hiimtmac inc.
 
-import protocol SQLKit.SQLExpression
-import struct SQLKit.SQLSerializer
+import SQLKit
 
-public struct CountExpression<Content>: AggregateExpression {
+public struct CountExpression<Content>: AggregateExpression, Sendable where Content: Sendable {
     let content: Content
     let isDistinct: Bool
 
@@ -26,7 +25,7 @@ extension CountExpression: SelectSQLExpression where
         _Select(content: self.content, distinct: self.isDistinct)
     }
 
-    private struct _Select: SQLExpression {
+    struct _Select: SQLExpression {
         let content: Content
         let distinct: Bool
 
@@ -50,7 +49,7 @@ extension CountExpression: CompareSQLExpression where
         _Compare(content: self.content)
     }
 
-    private struct _Compare: SQLExpression {
+    struct _Compare: SQLExpression {
         let content: Content
 
         func serialize(to serializer: inout SQLSerializer) {

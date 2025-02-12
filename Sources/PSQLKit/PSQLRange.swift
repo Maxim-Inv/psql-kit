@@ -1,12 +1,11 @@
 // PSQLRange.swift
 // Copyright (c) 2024 hiimtmac inc.
 
-import protocol SQLKit.SQLExpression
-import struct SQLKit.SQLSerializer
+import SQLKit
 
-public struct PSQLRange<T, U> where
-    T: TypeEquatable,
-    U: TypeEquatable,
+public struct PSQLRange<T, U>: Sendable where
+    T: TypeEquatable & Sendable,
+    U: TypeEquatable & Sendable,
     T.CompareType == U.CompareType
 {
     let lower: T
@@ -30,15 +29,13 @@ extension PSQLRange: CompareSQLExpression where
         _Compare(lower: self.lower, upper: self.upper)
     }
 
-    private struct _Compare: SQLExpression {
+    struct _Compare: SQLExpression {
         let lower: T
         let upper: U
 
         func serialize(to serializer: inout SQLSerializer) {
             self.lower.compareSqlExpression.serialize(to: &serializer)
-            serializer.writeSpace()
-            serializer.write("AND")
-            serializer.writeSpace()
+            serializer.writeSpaced("AND")
             self.upper.compareSqlExpression.serialize(to: &serializer)
         }
     }

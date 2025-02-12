@@ -1,38 +1,14 @@
 // GroupByBuilder.swift
 // Copyright (c) 2024 hiimtmac inc.
 
-import protocol SQLKit.SQLExpression
-import struct SQLKit.SQLList
-import struct SQLKit.SQLRaw
-import struct SQLKit.SQLSerializer
+import SQLKit
 
 extension EmptyExpression: GroupBySQLExpression {
     public var groupBySqlExpression: some SQLExpression {
-        _GroupBy()
+        _Empty()
     }
 
     public var groupByIsNull: Bool { true }
-
-    private struct _GroupBy: SQLExpression {
-        func serialize(to serializer: inout SQLSerializer) {
-            fatalError("Should not be serialized")
-        }
-    }
-}
-
-public struct GroupByTouple<each T: GroupBySQLExpression>: GroupBySQLExpression {
-    let content: (repeat each T)
-
-    init(_ content: repeat each T) {
-        self.content = (repeat each content)
-    }
-
-    // typing this `some SQLExpression` causes "SwiftEmitModule failed with nonzero exit code"
-    public var groupBySqlExpression: SQLList {
-        var collector = Collector()
-        _ = (repeat collector.append(exp: each content))
-        return SQLList(collector.expressions, separator: SQLRaw(", "))
-    }
 }
 
 extension _ConditionalContent: GroupBySQLExpression where T: GroupBySQLExpression, U: GroupBySQLExpression {
@@ -73,7 +49,7 @@ public enum GroupByBuilder {
     @_disfavoredOverload
     public static func buildBlock<each Content>(
         _ content: repeat each Content
-    ) -> GroupByTouple< repeat each Content> where repeat each Content: GroupBySQLExpression {
+    ) -> QueryTuple< repeat each Content> where repeat each Content: GroupBySQLExpression {
         .init(repeat each content)
     }
 }

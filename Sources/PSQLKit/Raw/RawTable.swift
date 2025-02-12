@@ -1,8 +1,7 @@
 // RawTable.swift
 // Copyright (c) 2024 hiimtmac inc.
 
-import protocol SQLKit.SQLExpression
-import struct SQLKit.SQLSerializer
+import SQLKit
 
 public struct RawTable: SQLExpression {
     let table: String
@@ -12,9 +11,7 @@ public struct RawTable: SQLExpression {
     }
 
     public func serialize(to serializer: inout SQLSerializer) {
-        serializer.writeQuote()
-        serializer.write(self.table)
-        serializer.writeQuote()
+        serializer.writeIdentifier(self.table)
     }
 }
 

@@ -1,10 +1,9 @@
 // InsertDirective.swift
 // Copyright (c) 2024 hiimtmac inc.
 
-import protocol SQLKit.SQLExpression
-import struct SQLKit.SQLSerializer
+import SQLKit
 
-public struct InsertDirective<Table: FromSQLExpression, T: InsertSQLExpression>: SQLExpression {
+public struct InsertDirective<Table, T>: SQLExpression where Table: FromSQLExpression & Sendable, T: InsertSQLExpression & Sendable {
     let table: Table
     let content: T
 
@@ -27,9 +26,7 @@ public struct InsertDirective<Table: FromSQLExpression, T: InsertSQLExpression>:
         serializer.write("(")
         content.insertColumnSqlExpression.serialize(to: &serializer)
         serializer.write(")")
-        serializer.writeSpace()
-        serializer.write("VALUES")
-        serializer.writeSpace()
+        serializer.writeSpaced("VALUES")
         serializer.write("(")
         content.insertValueSqlExpression.serialize(to: &serializer)
         serializer.write(")")

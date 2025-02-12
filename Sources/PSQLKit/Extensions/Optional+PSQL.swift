@@ -1,16 +1,15 @@
 // Optional+PSQL.swift
 // Copyright (c) 2024 hiimtmac inc.
 
-import struct PostgresNIO.PostgresDataType
-import protocol SQLKit.SQLExpression
-import struct SQLKit.SQLSerializer
+import PostgresNIO
+import SQLKit
 
-extension Optional: SQLExpression where Wrapped: SQLExpression {
+extension Optional: @retroactive SQLExpression where Wrapped: SQLExpression {
     public func serialize(to serializer: inout SQLSerializer) {
         if let self = self {
             self.serialize(to: &serializer)
         } else {
-            serializer.write("NULL")
+            serializer.writeNull()
         }
     }
 }

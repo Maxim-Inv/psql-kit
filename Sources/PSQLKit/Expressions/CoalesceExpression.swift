@@ -1,9 +1,7 @@
 // CoalesceExpression.swift
 // Copyright (c) 2024 hiimtmac inc.
 
-import protocol SQLKit.SQLExpression
-import struct SQLKit.SQLList
-import struct SQLKit.SQLSerializer
+import SQLKit
 
 public protocol Coalescable: BaseSQLExpression {}
 
@@ -17,7 +15,7 @@ public protocol Coalescable: BaseSQLExpression {}
 //
 // }
 
-public struct CoalesceExpression<T> where
+public struct CoalesceExpression<T>: Sendable where
     T: TypeEquatable
 {
     let values: [any SQLExpression]
@@ -118,7 +116,7 @@ extension CoalesceExpression: BaseSQLExpression {
         _Base(values: self.values)
     }
 
-    private struct _Base: SQLExpression {
+    struct _Base: SQLExpression {
         let values: [any SQLExpression]
 
         func serialize(to serializer: inout SQLSerializer) {
@@ -137,7 +135,7 @@ extension CoalesceExpression: SelectSQLExpression where
         _Select(values: self.values)
     }
 
-    private struct _Select: SQLExpression {
+    struct _Select: SQLExpression {
         let values: [any SQLExpression]
 
         func serialize(to serializer: inout SQLSerializer) {
@@ -145,7 +143,7 @@ extension CoalesceExpression: SelectSQLExpression where
             serializer.write("(")
             SQLList(self.values).serialize(to: &serializer)
             serializer.write(")")
-            T.postgresDataType.serialize(to: &serializer)
+            serializer.writeCast(T.postgresDataType)
         }
     }
 }

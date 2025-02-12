@@ -1,38 +1,14 @@
 // OrderByBuilder.swift
 // Copyright (c) 2024 hiimtmac inc.
 
-import protocol SQLKit.SQLExpression
-import struct SQLKit.SQLList
-import struct SQLKit.SQLRaw
-import struct SQLKit.SQLSerializer
+import SQLKit
 
 extension EmptyExpression: OrderBySQLExpression {
     public var orderBySqlExpression: some SQLExpression {
-        _OrderBy()
+        _Empty()
     }
 
     public var orderByIsNull: Bool { true }
-
-    private struct _OrderBy: SQLExpression {
-        func serialize(to serializer: inout SQLSerializer) {
-            fatalError("Should not be serialized")
-        }
-    }
-}
-
-public struct OrderByTouple<each T: OrderBySQLExpression>: OrderBySQLExpression {
-    let content: (repeat each T)
-
-    init(_ content: repeat each T) {
-        self.content = (repeat each content)
-    }
-
-    // typing this `some SQLExpression` causes "SwiftEmitModule failed with nonzero exit code"
-    public var orderBySqlExpression: SQLList {
-        var collector = Collector()
-        _ = (repeat collector.append(exp: each content))
-        return SQLList(collector.expressions, separator: SQLRaw(", "))
-    }
 }
 
 extension _ConditionalContent: OrderBySQLExpression where T: OrderBySQLExpression, U: OrderBySQLExpression {
@@ -73,7 +49,7 @@ public enum OrderByBuilder {
     @_disfavoredOverload
     public static func buildBlock<each Content>(
         _ content: repeat each Content
-    ) -> OrderByTouple< repeat each Content> where repeat each Content: OrderBySQLExpression {
+    ) -> QueryTuple< repeat each Content> where repeat each Content: OrderBySQLExpression {
         .init(repeat each content)
     }
 }

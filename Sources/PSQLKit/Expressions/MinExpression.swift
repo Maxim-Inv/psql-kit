@@ -1,10 +1,9 @@
 // MinExpression.swift
 // Copyright (c) 2024 hiimtmac inc.
 
-import protocol SQLKit.SQLExpression
-import struct SQLKit.SQLSerializer
+import SQLKit
 
-public struct MinExpression<Content>: AggregateExpression {
+public struct MinExpression<Content>: AggregateExpression, Sendable where Content: Sendable {
     let content: Content
 
     public init(_ content: Content) {
@@ -19,7 +18,7 @@ extension MinExpression: SelectSQLExpression where
         _Select(content: self.content)
     }
 
-    private struct _Select: SQLExpression {
+    struct _Select: SQLExpression {
         let content: Content
 
         func serialize(to serializer: inout SQLSerializer) {
@@ -38,7 +37,7 @@ extension MinExpression: CompareSQLExpression where
         _Compare(content: self.content)
     }
 
-    private struct _Compare: SQLExpression {
+    struct _Compare: SQLExpression {
         let content: Content
 
         func serialize(to serializer: inout SQLSerializer) {

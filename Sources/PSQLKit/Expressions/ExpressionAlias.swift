@@ -1,10 +1,9 @@
 // ExpressionAlias.swift
 // Copyright (c) 2024 hiimtmac inc.
 
-import protocol SQLKit.SQLExpression
-import struct SQLKit.SQLSerializer
+import SQLKit
 
-public struct ExpressionAlias<Expression> {
+public struct ExpressionAlias<Expression>: Sendable where Expression: Sendable {
     let expression: Expression
     let alias: String
 }
@@ -20,20 +19,16 @@ extension ExpressionAlias: SelectSQLExpression where
         _Select(expression: self.expression, alias: self.alias)
     }
 
-    private struct _Select: SQLExpression {
+    struct _Select: SQLExpression {
         let expression: Expression
         let alias: String
 
         func serialize(to serializer: inout SQLSerializer) {
             self.expression.selectSqlExpression.serialize(to: &serializer)
 
-            serializer.writeSpace()
-            serializer.write("AS")
-            serializer.writeSpace()
+            serializer.writeSpaced("AS")
 
-            serializer.writeQuote()
-            serializer.write(self.alias)
-            serializer.writeQuote()
+            serializer.writeIdentifier(self.alias)
         }
     }
 }
@@ -45,20 +40,16 @@ extension ExpressionAlias: FromSQLExpression where
         _From(expression: self.expression, alias: self.alias)
     }
 
-    private struct _From: SQLExpression {
+    struct _From: SQLExpression {
         let expression: Expression
         let alias: String
 
         func serialize(to serializer: inout SQLSerializer) {
             self.expression.fromSqlExpression.serialize(to: &serializer)
 
-            serializer.writeSpace()
-            serializer.write("AS")
-            serializer.writeSpace()
+            serializer.writeSpaced("AS")
 
-            serializer.writeQuote()
-            serializer.write(self.alias)
-            serializer.writeQuote()
+            serializer.writeIdentifier(self.alias)
         }
     }
 }

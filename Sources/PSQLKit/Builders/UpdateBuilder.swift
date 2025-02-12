@@ -1,38 +1,14 @@
 // UpdateBuilder.swift
 // Copyright (c) 2024 hiimtmac inc.
 
-import protocol SQLKit.SQLExpression
-import struct SQLKit.SQLList
-import struct SQLKit.SQLRaw
-import struct SQLKit.SQLSerializer
+import SQLKit
 
 extension EmptyExpression: UpdateSQLExpression {
     public var updateSqlExpression: some SQLExpression {
-        _Update()
+        _Empty()
     }
 
     public var updateIsNull: Bool { true }
-
-    private struct _Update: SQLExpression {
-        func serialize(to serializer: inout SQLSerializer) {
-            fatalError("Should not be serialized")
-        }
-    }
-}
-
-public struct UpdateTouple<each T: UpdateSQLExpression>: UpdateSQLExpression {
-    let content: (repeat each T)
-
-    init(_ content: repeat each T) {
-        self.content = (repeat each content)
-    }
-
-    // typing this `some SQLExpression` causes "SwiftEmitModule failed with nonzero exit code"
-    public var updateSqlExpression: SQLList {
-        var collector = Collector()
-        _ = (repeat collector.append(exp: each content))
-        return SQLList(collector.expressions, separator: SQLRaw(", "))
-    }
 }
 
 extension _ConditionalContent: UpdateSQLExpression where T: UpdateSQLExpression, U: UpdateSQLExpression {
@@ -73,7 +49,7 @@ public enum UpdateBuilder {
     @_disfavoredOverload
     public static func buildBlock<each Content>(
         _ content: repeat each Content
-    ) -> UpdateTouple< repeat each Content> where repeat each Content: UpdateSQLExpression {
+    ) -> QueryTuple< repeat each Content> where repeat each Content: UpdateSQLExpression {
         .init(repeat each content)
     }
 }

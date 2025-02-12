@@ -1,12 +1,11 @@
 // ArrayNumberDimensionsExpression.swift
 // Copyright (c) 2024 hiimtmac inc.
 
-import struct PostgresNIO.PostgresDataType
-import protocol SQLKit.SQLExpression
-import struct SQLKit.SQLSerializer
+import PostgresNIO
+import SQLKit
 
-public struct ArrayNumberDimensionsExpression<Content>: AggregateExpression where
-    Content: PSQLArrayRepresentable
+public struct ArrayNumberDimensionsExpression<Content>: AggregateExpression, Sendable where
+    Content: PSQLArrayRepresentable & Sendable
 {
     let content: Content
 
@@ -22,7 +21,7 @@ extension ArrayNumberDimensionsExpression: SelectSQLExpression where
         _Select(content: self.content)
     }
 
-    private struct _Select: SQLExpression {
+    struct _Select: SQLExpression {
         let content: Content
 
         func serialize(to serializer: inout SQLSerializer) {
@@ -30,7 +29,7 @@ extension ArrayNumberDimensionsExpression: SelectSQLExpression where
             serializer.write("(")
             self.content.selectSqlExpression.serialize(to: &serializer)
             serializer.write(")")
-            PostgresDataType.int4.serialize(to: &serializer)
+            serializer.writeCast(.int4)
         }
     }
 }
@@ -42,7 +41,7 @@ extension ArrayNumberDimensionsExpression: CompareSQLExpression where
         _Compare(content: self.content)
     }
 
-    private struct _Compare: SQLExpression {
+    struct _Compare: SQLExpression {
         let content: Content
 
         func serialize(to serializer: inout SQLSerializer) {

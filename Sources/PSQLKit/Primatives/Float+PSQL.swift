@@ -1,15 +1,14 @@
 // Float+PSQL.swift
 // Copyright (c) 2024 hiimtmac inc.
 
-import struct PostgresNIO.PostgresDataType
-import protocol SQLKit.SQLExpression
-import struct SQLKit.SQLSerializer
+import PostgresNIO
+import SQLKit
 
 extension Float: PSQLExpression {
     public static var postgresDataType: PostgresDataType { .numeric }
 }
 
-extension Float: SQLExpression {
+extension Float: @retroactive SQLExpression {
     public func serialize(to serializer: inout SQLSerializer) {
         serializer.write("\(self)")
     }

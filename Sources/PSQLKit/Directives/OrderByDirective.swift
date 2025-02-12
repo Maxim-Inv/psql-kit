@@ -1,8 +1,7 @@
 // OrderByDirective.swift
 // Copyright (c) 2024 hiimtmac inc.
 
-import protocol SQLKit.SQLExpression
-import struct SQLKit.SQLSerializer
+import SQLKit
 
 public enum OrderByDirection: String, SQLExpression {
     case asc = "ASC"
@@ -13,7 +12,7 @@ public enum OrderByDirection: String, SQLExpression {
     }
 }
 
-public struct OrderByDirective<T: OrderBySQLExpression>: SQLExpression {
+public struct OrderByDirective<T>: SQLExpression where T: OrderBySQLExpression & Sendable {
     let content: T
 
     init(_ content: T) {
@@ -32,11 +31,11 @@ public struct OrderByDirective<T: OrderBySQLExpression>: SQLExpression {
     }
 }
 
-public struct OrderByModifier<Content: OrderBySQLExpression>: OrderBySQLExpression {
+public struct OrderByModifier<Content>: OrderBySQLExpression, Sendable where Content: OrderBySQLExpression & Sendable {
     let content: Content
     let direction: OrderByDirection
 
-    private struct _OrderBy: SQLExpression {
+    struct _OrderBy: SQLExpression {
         let content: Content
         let direction: OrderByDirection
 

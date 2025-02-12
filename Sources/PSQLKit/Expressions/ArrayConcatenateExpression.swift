@@ -1,13 +1,12 @@
 // ArrayConcatenateExpression.swift
 // Copyright (c) 2024 hiimtmac inc.
 
-import struct PostgresNIO.PostgresDataType
-import protocol SQLKit.SQLExpression
-import struct SQLKit.SQLSerializer
+import PostgresNIO
+import SQLKit
 
-public struct ArrayConcatenateExpression<T, U>: AggregateExpression where
-    T: PSQLArrayRepresentable & TypeEquatable,
-    U: PSQLArrayRepresentable & TypeEquatable,
+public struct ArrayConcatenateExpression<T, U>: AggregateExpression & Sendable where
+    T: PSQLArrayRepresentable & TypeEquatable & Sendable,
+    U: PSQLArrayRepresentable & TypeEquatable & Sendable,
     T.CompareType == U.CompareType
 {
     let one: T
@@ -28,7 +27,7 @@ extension ArrayConcatenateExpression: SelectSQLExpression where
         _Select(one: self.one, two: self.two)
     }
 
-    private struct _Select: SQLExpression {
+    struct _Select: SQLExpression {
         let one: T
         let two: U
 
@@ -40,7 +39,7 @@ extension ArrayConcatenateExpression: SelectSQLExpression where
             serializer.writeSpace()
             self.two.selectSqlExpression.serialize(to: &serializer)
             serializer.write(")")
-            PostgresDataType.array(T.CompareType.postgresDataType).serialize(to: &serializer)
+            serializer.writeCast(PostgresDataType.array(T.CompareType.postgresDataType))
         }
     }
 }
@@ -53,7 +52,7 @@ extension ArrayConcatenateExpression: CompareSQLExpression where
         _Compare(one: self.one, two: self.two)
     }
 
-    private struct _Compare: SQLExpression {
+    struct _Compare: SQLExpression {
         let one: T
         let two: U
 

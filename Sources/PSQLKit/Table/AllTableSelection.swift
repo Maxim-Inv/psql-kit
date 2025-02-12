@@ -1,63 +1,65 @@
 // AllTableSelection.swift
 // Copyright (c) 2024 hiimtmac inc.
 
-import protocol SQLKit.SQLExpression
-import struct SQLKit.SQLSerializer
+import SQLKit
 
-public struct AllTableSelection<T> where T: Table {
-    let table: T
+public struct AllCTESelection<T>: Sendable where T: Table {
+    let cte: TableInstance<T>
 }
 
 // MARK: Select
 
-extension AllTableSelection: SelectSQLExpression {
-    private struct _Select: SQLExpression {
-        let spaceName: String?
-        let schemaName: String
-
+extension AllCTESelection: SelectSQLExpression {
+    struct _Select: SQLExpression {
+        let schemaName: String?
+        let tableName: String
+        
+        init(schemaName: String?, tableName: String) {
+            self.schemaName = schemaName
+            self.tableName = tableName
+        }
+        
         func serialize(to serializer: inout SQLSerializer) {
-            if let space = spaceName {
-                serializer.writeQuote()
-                serializer.write(space)
-                serializer.writeQuote()
+            if let space = schemaName {
+                serializer.writeIdentifier(space)
                 serializer.writePeriod()
             }
-
-            serializer.writeQuote()
-            serializer.write(self.schemaName)
-            serializer.writeQuote()
+            
+            serializer.writeIdentifier(self.tableName)
             serializer.writePeriod()
             serializer.write("*")
         }
     }
 
     public var selectSqlExpression: some SQLExpression {
-        _Select(spaceName: T.path, schemaName: T.schema)
+        _Select(schemaName: T.schemaName, tableName: T.tableName)
     }
 }
 
 // MARK: - Alias
 
-extension AllTableSelection {
-    public struct Alias {
-        let table: TableAlias<T>
+extension AllCTESelection {
+    public struct Alias: Sendable {
+        let cte: TableAlias<T>
     }
 }
 
-extension AllTableSelection.Alias: SelectSQLExpression {
-    private struct _Select: SQLExpression {
+extension AllCTESelection.Alias: SelectSQLExpression {
+    struct _Select: SQLExpression {
         let aliasName: String
 
+        init(aliasName: String) {
+            self.aliasName = aliasName
+        }
+
         func serialize(to serializer: inout SQLSerializer) {
-            serializer.writeQuote()
-            serializer.write(self.aliasName)
-            serializer.writeQuote()
+            serializer.writeIdentifier(self.aliasName)
             serializer.writePeriod()
             serializer.write("*")
         }
     }
-
+    
     public var selectSqlExpression: some SQLExpression {
-        _Select(aliasName: self.table.alias)
+        _Select(aliasName: self.cte.alias)
     }
 }

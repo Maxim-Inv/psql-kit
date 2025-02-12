@@ -1,38 +1,14 @@
 // JoinBuilder.swift
 // Copyright (c) 2024 hiimtmac inc.
 
-import protocol SQLKit.SQLExpression
-import struct SQLKit.SQLList
-import struct SQLKit.SQLRaw
-import struct SQLKit.SQLSerializer
+import SQLKit
 
 extension EmptyExpression: JoinSQLExpression {
     public var joinSqlExpression: some SQLExpression {
-        _Join()
+        _Empty()
     }
 
     public var joinIsNull: Bool { true }
-
-    private struct _Join: SQLExpression {
-        func serialize(to serializer: inout SQLSerializer) {
-            fatalError("Should not be serialized")
-        }
-    }
-}
-
-public struct JoinTouple<each T: JoinSQLExpression>: JoinSQLExpression {
-    let content: (repeat each T)
-
-    init(_ content: repeat each T) {
-        self.content = (repeat each content)
-    }
-
-    // typing this `some SQLExpression` causes "SwiftEmitModule failed with nonzero exit code"
-    public var joinSqlExpression: SQLList {
-        var collector = Collector()
-        _ = (repeat collector.append(exp: each content))
-        return SQLList(collector.expressions, separator: SQLRaw(" AND "))
-    }
 }
 
 extension _ConditionalContent: JoinSQLExpression where T: JoinSQLExpression, U: JoinSQLExpression {
@@ -73,7 +49,7 @@ public enum JoinBuilder {
     @_disfavoredOverload
     public static func buildBlock<each Content>(
         _ content: repeat each Content
-    ) -> JoinTouple< repeat each Content> where repeat each Content: JoinSQLExpression {
+    ) -> QueryTuple< repeat each Content> where repeat each Content: JoinSQLExpression {
         .init(repeat each content)
     }
 }

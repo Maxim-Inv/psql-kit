@@ -1,16 +1,19 @@
 // SelectDirective.swift
 // Copyright (c) 2024 hiimtmac inc.
 
-import protocol SQLKit.SQLExpression
-import struct SQLKit.SQLSerializer
+import SQLKit
 
 // https://github.com/apple/swift-evolution/blob/main/proposals/0289-result-builders.md
 
-public struct SelectDirective<T: SelectSQLExpression>: SelectSQLExpression, SQLExpression {
+public struct SelectDirective<T>: SelectSQLExpression, SQLExpression, Sendable where T: SelectSQLExpression & Sendable {
     let content: T
 
     init(_ content: T) {
         self.content = content
+    }
+    
+    public init(_ scope: SelectScope) where T == SelectScope {
+        self.content = scope
     }
 
     public init(@SelectBuilder content: () -> T) {
@@ -29,7 +32,21 @@ public struct SelectDirective<T: SelectSQLExpression>: SelectSQLExpression, SQLE
     }
 }
 
-public struct SelectModifier<T: SelectSQLExpression, U: SelectSQLExpression>: SQLExpression {
+public enum SelectScope: SelectSQLExpression {
+    case all
+    
+    public var selectSqlExpression: some SQLExpression {
+        _Select()
+    }
+
+    struct _Select: SQLExpression {
+        func serialize(to serializer: inout SQLSerializer) {
+            serializer.write("*")
+        }
+    }
+}
+
+public struct SelectModifier<T, U>: SQLExpression where T: SelectSQLExpression & Sendable, U: SelectSQLExpression & Sendable {
     let select: SelectDirective<T>
     let modifier: U
 
@@ -45,7 +62,7 @@ public struct SelectModifier<T: SelectSQLExpression, U: SelectSQLExpression>: SQ
     }
 }
 
-public struct DistinctModifier<T: SelectSQLExpression>: SelectSQLExpression {
+public struct DistinctModifier<T>: SelectSQLExpression, Sendable where T: SelectSQLExpression & Sendable {
     let content: T
 
     init(_ content: T) {
@@ -60,7 +77,7 @@ public struct DistinctModifier<T: SelectSQLExpression>: SelectSQLExpression {
         _Select(content: content)
     }
 
-    private struct _Select: SQLExpression {
+    struct _Select: SQLExpression {
         let content: T
 
         func serialize(to serializer: inout SQLSerializer) {

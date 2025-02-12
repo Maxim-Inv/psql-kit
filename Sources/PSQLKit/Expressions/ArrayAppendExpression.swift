@@ -1,13 +1,12 @@
 // ArrayAppendExpression.swift
 // Copyright (c) 2024 hiimtmac inc.
 
-import struct PostgresNIO.PostgresDataType
-import protocol SQLKit.SQLExpression
-import struct SQLKit.SQLSerializer
+import PostgresNIO
+import SQLKit
 
-public struct ArrayAppendExpression<Content, T>: AggregateExpression where
-    Content: PSQLArrayRepresentable & TypeEquatable,
-    T: TypeEquatable,
+public struct ArrayAppendExpression<Content, T>: AggregateExpression, Sendable where
+    Content: PSQLArrayRepresentable & TypeEquatable & Sendable,
+    T: TypeEquatable & Sendable,
     Content.CompareType == T.CompareType
 {
     let content: Content
@@ -27,7 +26,7 @@ extension ArrayAppendExpression: SelectSQLExpression where
         _Select(content: self.content, append: self.append)
     }
 
-    private struct _Select: SQLExpression {
+    struct _Select: SQLExpression {
         let content: Content
         let append: T
 
@@ -39,7 +38,7 @@ extension ArrayAppendExpression: SelectSQLExpression where
             serializer.writeSpace()
             self.append.selectSqlExpression.serialize(to: &serializer)
             serializer.write(")")
-            PostgresDataType.array(T.postgresDataType).serialize(to: &serializer)
+            serializer.writeCast(PostgresDataType.array(T.postgresDataType))
         }
     }
 }
@@ -52,7 +51,7 @@ extension ArrayAppendExpression: CompareSQLExpression where
         _Compare(content: self.content, append: self.append)
     }
 
-    private struct _Compare: SQLExpression {
+    struct _Compare: SQLExpression {
         let content: Content
         let append: T
 

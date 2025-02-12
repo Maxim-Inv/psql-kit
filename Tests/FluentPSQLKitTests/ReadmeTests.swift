@@ -2,15 +2,20 @@
 // Copyright (c) 2024 hiimtmac inc.
 
 import FluentBenchmark
+import FluentPSQLKit
 import PSQLKit
-import XCTest
+import SQLKit
+import Testing
 
 // needed because https://forums.swift.org/t/exported-import-does-not-properly-export-custom-operators/39090/5
 infix operator ~~: ComparisonPrecedence
 infix operator ...: LogicalConjunctionPrecedence
 
-final class ReadmeTests: PSQLTestCase {
+@Suite
+struct ReadmeTests {
+    @Test
     func testWelcome() {
+        var serializer = SQLSerializer.test
         QUERY {
             SELECT {
                 Moon.$name
@@ -18,10 +23,11 @@ final class ReadmeTests: PSQLTestCase {
             }
             FROM { Moon.table }
         }
-        .serialize(to: &fluentSerializer)
-        print(fluentSerializer.sql)
+        .serialize(to: &serializer)
+        print(serializer.sql)
     }
 
+    @Test
     func testExecute() {
         let q = QUERY {
             SELECT {
@@ -37,45 +43,55 @@ final class ReadmeTests: PSQLTestCase {
         print(binding)
     }
 
+    @Test
     func testColumnAlias() {
+        var serializer = SQLSerializer.test
         SELECT {
             Moon.$name.as("moon_name")
         }
-        .serialize(to: &fluentSerializer)
-        print(fluentSerializer.sql)
+        .serialize(to: &serializer)
+        print(serializer.sql)
     }
 
+    @Test
     func testTableAlias() {
+        var serializer = SQLSerializer.test
         let m = Moon.as("m")
         SELECT {
             m.$name
             m.$craters.as("crater_count")
         }
-        .serialize(to: &fluentSerializer)
-        print(fluentSerializer.sql)
+        .serialize(to: &serializer)
+        print(serializer.sql)
     }
 
+    @Test
     func testSelect() {
+        var serializer = SQLSerializer.test
         let m = Moon.as("m")
         SELECT {
             m.*
             m.$name
             m.$craters
         }
-        .serialize(to: &fluentSerializer)
-        print(fluentSerializer.sql)
+        .serialize(to: &serializer)
+        print(serializer.sql)
     }
 
+    @Test
     func testFrom() {
+        var serializer = SQLSerializer.test
         let m = Moon.as("m")
         FROM {
             m.table
         }
-        .serialize(to: &fluentSerializer)
-        print(fluentSerializer.sql)
+        .serialize(to: &serializer)
+        print(serializer.sql)
     }
 
+    @Test
     func testJoin() {
+        var serializer = SQLSerializer.test
         let m = Moon.as("m")
         let p = Planet.as("p")
         QUERY {
@@ -87,21 +103,25 @@ final class ReadmeTests: PSQLTestCase {
                 m.$planet == p.$id
             }
         }
-        .serialize(to: &fluentSerializer)
-        print(fluentSerializer.sql)
+        .serialize(to: &serializer)
+        print(serializer.sql)
     }
 
+    @Test
     func testWhere() {
+        var serializer = SQLSerializer.test
         let m = Moon.as("m")
         WHERE {
             m.$name == "the moon"
             m.$craters > 3
         }
-        .serialize(to: &fluentSerializer)
-        print(fluentSerializer.sql)
+        .serialize(to: &serializer)
+        print(serializer.sql)
     }
 
+    @Test
     func testComparisons() {
+        var serializer = SQLSerializer.test
         let m = Moon.as("m")
         WHERE {
             m.$craters == 3 || m.$craters != 3 // = / !=
@@ -114,31 +134,37 @@ final class ReadmeTests: PSQLTestCase {
             m.$name === "moon" || m.$name !== "moon" // IS / IS NOT
             m.$name === String?.none
         }
-        .serialize(to: &fluentSerializer)
-        print(fluentSerializer.sql)
+        .serialize(to: &serializer)
+        print(serializer.sql)
     }
 
+    @Test
     func testHaving() {
+        var serializer = SQLSerializer.test
         let m = Moon.as("m")
         HAVING {
             AVG(m.$craters) > 1
         }
-        .serialize(to: &fluentSerializer)
-        print(fluentSerializer.sql)
+        .serialize(to: &serializer)
+        print(serializer.sql)
     }
 
+    @Test
     func testGroupBy() {
+        var serializer = SQLSerializer.test
         let m = Moon.as("m")
         GROUPBY {
             m.$name
             m.$craters
             m.$planet
         }
-        .serialize(to: &fluentSerializer)
-        print(fluentSerializer.sql)
+        .serialize(to: &serializer)
+        print(serializer.sql)
     }
 
+    @Test
     func testOrderBy() {
+        var serializer = SQLSerializer.test
         let m = Moon.as("m")
         ORDERBY {
             m.$name
@@ -146,11 +172,13 @@ final class ReadmeTests: PSQLTestCase {
             m.$craters.asc()
             m.$planet.order(.desc)
         }
-        .serialize(to: &fluentSerializer)
-        print(fluentSerializer.sql)
+        .serialize(to: &serializer)
+        print(serializer.sql)
     }
 
+    @Test
     func testInsert() {
+        var serializer = SQLSerializer.test
         let m = Moon.as("m")
         INSERT(into: m.table) {
             m.$name => "the moon"
@@ -158,38 +186,46 @@ final class ReadmeTests: PSQLTestCase {
             m.$comets => 20
             m.$planet => UUID()
         }
-        .serialize(to: &fluentSerializer)
-        print(fluentSerializer.sql)
+        .serialize(to: &serializer)
+        print(serializer.sql)
     }
 
+    @Test
     func testUpdate() {
+        var serializer = SQLSerializer.test
         let m = Moon.as("m")
         UPDATE(m.table) {
             m.$name => "cool moon"
             m.$craters => 30
         }
-        .serialize(to: &fluentSerializer)
-        print(fluentSerializer.sql)
+        .serialize(to: &serializer)
+        print(serializer.sql)
     }
 
+    @Test
     func testDelete() {
+        var serializer = SQLSerializer.test
         let m = Moon.as("m")
         DELETE { m.table }
-            .serialize(to: &fluentSerializer)
-        print(fluentSerializer.sql)
+            .serialize(to: &serializer)
+        print(serializer.sql)
     }
 
+    @Test
     func testQuery() {
+        var serializer = SQLSerializer.test
         let m = Moon.as("m")
         QUERY {
             SELECT { m.* }
             FROM { m.table }
         }
-        .serialize(to: &fluentSerializer)
-        print(fluentSerializer.sql)
+        .serialize(to: &serializer)
+        print(serializer.sql)
     }
 
+    @Test
     func testWith() {
+        var serializer = SQLSerializer.test
         let m = Moon.as("m")
         WITH {
             QUERY {
@@ -198,11 +234,13 @@ final class ReadmeTests: PSQLTestCase {
             }
             .asWith(m.table)
         }
-        .serialize(to: &fluentSerializer)
-        print(fluentSerializer.sql)
+        .serialize(to: &serializer)
+        print(serializer.sql)
     }
 
+    @Test
     func testSubquery() {
+        var serializer = SQLSerializer.test
         let m = Moon.as("m")
         QUERY {
             SELECT {
@@ -220,11 +258,13 @@ final class ReadmeTests: PSQLTestCase {
                 .asSubquery("y")
             }
         }
-        .serialize(to: &fluentSerializer)
-        print(fluentSerializer.sql)
+        .serialize(to: &serializer)
+        print(serializer.sql)
     }
 
+    @Test
     func testArithmetic() {
+        var serializer = SQLSerializer.test
         let m = Moon.as("m")
         SELECT {
             (m.$craters / m.$comets).as("division")
@@ -232,11 +272,13 @@ final class ReadmeTests: PSQLTestCase {
             m.$craters - m.$comets
             (m.$craters * m.$comets).as("multiply")
         }
-        .serialize(to: &fluentSerializer)
-        print(fluentSerializer.sql)
+        .serialize(to: &serializer)
+        print(serializer.sql)
     }
 
+    @Test
     func testExpressions() {
+        var serializer = SQLSerializer.test
         let m = Moon.as("m")
         SELECT {
             AVG(m.$craters)
@@ -248,20 +290,23 @@ final class ReadmeTests: PSQLTestCase {
             CONCAT(m.$name, " is a cool planet").as("annotated")
             GENERATE_SERIES(from: 1, to: 5, interval: 1)
         }
-        .serialize(to: &fluentSerializer)
-        print(fluentSerializer.sql)
+        .serialize(to: &serializer)
+        print(serializer.sql)
     }
 
-    func testTransform() {
-        final class FluentModel: Model, Table {
-            static let schema = "my_model"
-            @ID
-            var id: UUID?
-            @Timestamp(key: "created_at", on: .create)
-            var createdAt: Date?
-        }
+    @FluentCTE("my_model")
+    final class FluentModel1: Model, @unchecked Sendable {
+        @ID
+        var id: UUID?
+        @Timestamp(key: "created_at", on: .create)
+        var createdAt: Date?
+        init() {}
+    }
 
-        let m = FluentModel.as("m")
+    @Test
+    func testTransform() {
+        var serializer = SQLSerializer.test
+        let m = FluentModel1.as("m")
         QUERY {
             SELECT {
                 m.$id
@@ -273,33 +318,39 @@ final class ReadmeTests: PSQLTestCase {
                 m.$createdAt >< (Date().psqlDate ... Date().psqlDate)
             }
         }
-        .serialize(to: &fluentSerializer)
-        print(fluentSerializer.sql)
+        .serialize(to: &serializer)
+        print(serializer.sql)
     }
 
+    @Test
     func testRaw() {
+        var serializer = SQLSerializer.test
         SELECT {
             RawColumn<String>("raw_column")
             RawColumn<Int>("raw_column").as("rawer")
             7
             666.as("number_of_the_beast")
         }
-        .serialize(to: &fluentSerializer)
-        print(fluentSerializer.sql)
+        .serialize(to: &serializer)
+        print(serializer.sql)
     }
 
+    @Test
     func testBinding() {
+        var serializer = SQLSerializer.test
         let m = Moon.as("m")
         WHERE {
             m.$name == "the moon".asBind()
             m.$comets > PSQLBind(8)
         }
-        .serialize(to: &fluentSerializer)
-        print(fluentSerializer.sql)
-        print(fluentSerializer.binds)
+        .serialize(to: &serializer)
+        print(serializer.sql)
+        print(serializer.binds)
     }
 
+    @Test
     func testUnion() {
+        var serializer = SQLSerializer.test
         let m = Moon.as("m")
         let p = Planet.as("p")
         UNION {
@@ -312,11 +363,13 @@ final class ReadmeTests: PSQLTestCase {
                 FROM { p.table }
             }
         }
-        .serialize(to: &fluentSerializer)
-        print(fluentSerializer.sql)
+        .serialize(to: &serializer)
+        print(serializer.sql)
     }
 
+    @Test
     func testDistinct() {
+        var serializer = SQLSerializer.test
         let m = Moon.as("m")
         let p = Planet.as("p")
         QUERY {
@@ -339,37 +392,79 @@ final class ReadmeTests: PSQLTestCase {
                 .asWith("y")
             }
         }
-        .serialize(to: &fluentSerializer)
-        print(fluentSerializer.sql)
+        .serialize(to: &serializer)
+        print(serializer.sql)
     }
 
+    @FluentCTE("my_model", schemaName: "custom_path")
+    final class FluentModel2: Model, @unchecked Sendable {
+        @ID
+        var id: UUID?
+        @Field(key: "name")
+        var name: String
+        init() {}
+    }
+
+    @Test
     func testSchema() {
-        final class FluentModel: Model, Table {
-            static let schema = "my_model"
-            static let path: String? = "custom_path"
-            @ID
-            var id: UUID?
-            @Field(key: "name")
-            var name: String
-        }
-        let m = FluentModel.as("m")
+        var serializer = SQLSerializer.test
+        let m = FluentModel2.as("m")
         QUERY {
             SELECT { m.* }
             FROM { m.table }
         }
-        .serialize(to: &fluentSerializer)
-        print(fluentSerializer.sql)
+        .serialize(to: &serializer)
+        print(serializer.sql)
     }
 }
 
-extension Galaxy: Table {}
+extension Galaxy: Table {
+    public static let queryContainer = QueryContainer()
+    public struct QueryContainer: Sendable {
+        @ColumnAccessor<IDValue>("id") var id: Never
+        @ColumnAccessor<String>("name") var name: Never
+    }
+}
 
-extension Moon: Table {}
+extension Moon: Table {
+    public static let queryContainer = QueryContainer()
+    public struct QueryContainer: Sendable {
+        @ColumnAccessor<IDValue>("id") var id: Never
+        @ColumnAccessor<String>("name") var name: Never
+        @ColumnAccessor<Int>("craters") var craters: Never
+        @ColumnAccessor<Int>("comets") var comets: Never
+        @ColumnAccessor<Planet.IDValue>("planet_id") var planet: Never
+    }
+}
 
-extension Planet: Table {}
+extension Planet: Table {
+    public static let queryContainer = QueryContainer()
+    public struct QueryContainer: Sendable {
+        @ColumnAccessor<IDValue>("id") var id: Never
+        @ColumnAccessor<String>("name") var name: Never
+    }
+}
 
-extension PlanetTag: Table {}
+extension PlanetTag: Table {
+    public static let queryContainer = QueryContainer()
+    public struct QueryContainer: Sendable {
+        @ColumnAccessor<IDValue>("id") var id: Never
+        @ColumnAccessor<String>("name") var name: Never
+    }
+}
 
-extension Star: Table {}
+extension Star: Table {
+    public static let queryContainer = QueryContainer()
+    public struct QueryContainer: Sendable {
+        @ColumnAccessor<IDValue>("id") var id: Never
+        @ColumnAccessor<String>("name") var name: Never
+    }
+}
 
-extension Tag: Table {}
+extension FluentBenchmark.Tag: Table {
+    public static let queryContainer = QueryContainer()
+    public struct QueryContainer: Sendable {
+        @ColumnAccessor<IDValue>("id") var id: Never
+        @ColumnAccessor<String>("name") var name: Never
+    }
+}

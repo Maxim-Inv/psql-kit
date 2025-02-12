@@ -1,11 +1,10 @@
 // DateTruncExpression.swift
 // Copyright (c) 2024 hiimtmac inc.
 
-import protocol SQLKit.SQLExpression
-import struct SQLKit.SQLSerializer
+import SQLKit
 
-public struct DateTruncExpression<Content>: AggregateExpression where
-    Content: PSQLArrayRepresentable & TypeEquatable
+public struct DateTruncExpression<Content>: AggregateExpression, Sendable where
+    Content: PSQLArrayRepresentable & TypeEquatable & Sendable
 {
     let precision: String
     let content: Content
@@ -23,7 +22,7 @@ extension DateTruncExpression: SelectSQLExpression where
         _Select(precision: self.precision, content: self.content)
     }
 
-    private struct _Select: SQLExpression {
+    struct _Select: SQLExpression {
         let precision: String
         let content: Content
 

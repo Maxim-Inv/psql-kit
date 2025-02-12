@@ -2,15 +2,14 @@
 // Copyright (c) 2024 hiimtmac inc.
 
 import Foundation
-import struct PostgresNIO.PostgresDataType
-import protocol SQLKit.SQLExpression
-import struct SQLKit.SQLSerializer
+import PostgresNIO
+import SQLKit
 
 extension Date: PSQLExpression {
     public static var postgresDataType: PostgresDataType { .timestamp }
 }
 
-extension Date: SQLExpression {
+extension Date: @retroactive SQLExpression {
     public func serialize(to serializer: inout SQLSerializer) {
         serializer.write("'\(self)'")
     }
@@ -35,6 +34,10 @@ extension Date: SelectSQLExpression {
 
 extension Date: CompareSQLExpression {
     public var compareSqlExpression: some SQLExpression { self }
+}
+
+extension Date: MutationSQLExpression {
+    public var mutationSqlExpression: some SQLExpression { self }
 }
 
 extension Date {
@@ -107,6 +110,10 @@ extension PSQLDate: CompareSQLExpression {
     public var compareSqlExpression: some SQLExpression { self }
 }
 
+extension PSQLDate: MutationSQLExpression {
+    public var mutationSqlExpression: some SQLExpression { self }
+}
+
 public struct PSQLTimestamp: PSQLDateTime {
     public let storage: Date
 
@@ -137,6 +144,10 @@ extension PSQLTimestamp: SelectSQLExpression {
 
 extension PSQLTimestamp: CompareSQLExpression {
     public var compareSqlExpression: some SQLExpression { self }
+}
+
+extension PSQLTimestamp: MutationSQLExpression {
+    public var mutationSqlExpression: some SQLExpression { self }
 }
 
 extension PSQLTimestamp: PSQLExpression {

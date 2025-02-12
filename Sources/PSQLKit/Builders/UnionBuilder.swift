@@ -1,38 +1,14 @@
 // UnionBuilder.swift
 // Copyright (c) 2024 hiimtmac inc.
 
-import protocol SQLKit.SQLExpression
-import struct SQLKit.SQLList
-import struct SQLKit.SQLRaw
-import struct SQLKit.SQLSerializer
+import SQLKit
 
 extension EmptyExpression: UnionSQLExpression {
     public var unionSqlExpression: some SQLExpression {
-        _Union()
+        _Empty()
     }
 
     public var unionIsNull: Bool { true }
-
-    private struct _Union: SQLExpression {
-        func serialize(to serializer: inout SQLSerializer) {
-            fatalError("Should not be serialized")
-        }
-    }
-}
-
-public struct UnionTouple<each T: UnionSQLExpression>: UnionSQLExpression {
-    let content: (repeat each T)
-
-    init(_ content: repeat each T) {
-        self.content = (repeat each content)
-    }
-
-    // typing this `some SQLExpression` causes "SwiftEmitModule failed with nonzero exit code"
-    public var unionSqlExpression: SQLList {
-        var collector = Collector()
-        _ = (repeat collector.append(exp: each content))
-        return SQLList(collector.expressions, separator: SQLRaw(" UNION "))
-    }
 }
 
 extension _ConditionalContent: UnionSQLExpression where T: UnionSQLExpression, U: UnionSQLExpression {
@@ -73,7 +49,7 @@ public enum UnionBuilder {
     @_disfavoredOverload
     public static func buildBlock<each Content>(
         _ content: repeat each Content
-    ) -> UnionTouple< repeat each Content> where repeat each Content: UnionSQLExpression {
+    ) -> QueryTuple< repeat each Content> where repeat each Content: UnionSQLExpression {
         .init(repeat each content)
     }
 }
